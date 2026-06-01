@@ -1,0 +1,150 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from datetime import datetime
+from typing import List, Optional
+
+from app.database import get_db
+from app.models import Ticket, Agent
+from app.schemas import TicketCreate, TicketResolve, TicketResponse
+from app.services.triage import triage_ticket, suggest_agent
+from app.services.report_generator import generate_report
+from app.services.badge import award_badge
+
+router = APIRouter(prefix="/tickets", tags=["Tickets"])
+
+
+# ── POST /tickets ────────────────────────────────────────
+@router.post("/", response_model=TicketResponse)
+def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
+
+    triage_result = triage_ticket(
+        category    = ticket_data.category,
+        description = ticket_data.description
+    )
+
+    agents = db.query(Agent).all()
+    best_agent = suggest_agent(ticket_data.category, agents)
+
+    ticket = Ticket(
+        user_id           = ticket_data.user_id,
+        project_id        = ticket_data.project_id,
+        payment_status    = ticket_data.payment_status,
+        category          = ticket_data.category,
+        description       = ticket_data.description,
+        status            = "open",
+        urgency           = triage_result["urgency"],
+        is_anger_flagged  = triage_result["is_anger_flagged"],
+        auto_reply_sent   = triage_result["auto_reply_sent"],
+        assigned_agent_id = best_agent.id if best_agent else None,
+        created_at        = datetime.utcnow()
+    )
+
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+    return ticket
+
+
+# ── GET /tickets ─────────────────────────────────────────
+@router.get("/", response_model=List[TicketResponse])
+def get_tickets(
+    status  : Optional[str] = None,
+    category: Optional[str] = None,
+    urgency : Optional[str] = None,
+    db      : Session = Depends(get_db)
+):
+    query = db.query(Ticket)
+
+    if status:
+        query = query.filter(Ticket.status == status)
+    if category:
+        query = query.filter(Ticket.category == category)
+    if urgency:
+        query = query.filter(Ticket.urgency == urgency)
+
+    tickets = query.order_by(
+        Ticket.is_anger_flagged.desc(),
+        Ticket.urgency.desc(),
+        Ticket.created_at.asc()
+    ).all()
+
+    return tickets
+
+
+# ── GET /tickets/{id} ────────────────────────────────────
+@router.get("/{ticket_id}", response_model=TicketResponse)
+def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return ticket
+
+
+# ── PATCH /tickets/{id}/resolve ──────────────────────────
+@router.patch("/{ticket_id}/resolve", response_model=TicketResponse)
+def resolve_ticket(
+    ticket_id       : int,
+    resolution_data : TicketResolve,
+    db              : Session = Depends(get_db)
+):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    if ticket.status == "resolved":
+        raise HTTPException(status_code=400, detail="Ticket already resolved")
+
+    # Step 1 — Mark resolved
+    ticket.status      = "resolved"
+    ticket.resolved_at = datetime.utcnow()
+    db.commit()
+
+    # Step 2 — Auto generate micro report
+    generate_report(
+        db               = db,
+        ticket           = ticket,
+        resolution_notes = resolution_data.resolution_notes,
+        what_broke       = resolution_data.what_broke,
+        why_it_happened  = resolution_data.why_it_happened,
+        how_fixed        = resolution_data.how_fixed,
+        csat_score       = resolution_data.csat_score
+    )
+
+    # Step 3 — Award badge
+    award_badge(db=db, ticket=ticket)
+
+    # Step 4 — Update agent stats
+    if ticket.assigned_agent_id:
+        agent = db.query(Agent).filter(
+            Agent.id == ticket.assigned_agent_id
+        ).first()
+        if agent:
+            agent.tickets_solved += 1
+            if resolution_data.csat_score:
+                agent.avg_csat = round(
+                    (agent.avg_csat * (agent.tickets_solved - 1) +
+                     resolution_data.csat_score) / agent.tickets_solved
+                )
+            db.commit()
+
+    # Step 5 — Refresh and return
+    db.refresh(ticket)
+    return ticket
+
+
+# ── GET /tickets/{id}/autoreply ──────────────────────────
+@router.get("/{ticket_id}/autoreply")
+def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    if ticket.auto_reply_sent:
+        return {
+            "auto_reply_sent": True,
+            "message": "Your issue has been identified. Please see the suggested resolution below.",
+        }
+    return {
+        "auto_reply_sent": False,
+        "message": "Your ticket has been received and assigned to an agent."
+    }
