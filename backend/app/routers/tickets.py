@@ -148,3 +148,31 @@ def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
         "auto_reply_sent": False,
         "message": "Your ticket has been received and assigned to an agent."
     }
+
+
+# ── GET /context/{user_id} ───────────────────────────────
+# Anjali's ticket form calls this on load
+# Returns last known project + payment context for a user
+
+@router.get("/context/{user_id}")
+def get_user_context(user_id: str, db: Session = Depends(get_db)):
+    last_ticket = db.query(Ticket).filter(
+        Ticket.user_id == user_id
+    ).order_by(Ticket.created_at.desc()).first()
+
+    if last_ticket:
+        return {
+            "user_id"       : user_id,
+            "project_id"    : last_ticket.project_id,
+            "payment_status": last_ticket.payment_status,
+            "last_category" : last_ticket.category,
+            "found"         : True
+        }
+
+    return {
+        "user_id"       : user_id,
+        "project_id"    : None,
+        "payment_status": None,
+        "last_category" : None,
+        "found"         : False
+    }
