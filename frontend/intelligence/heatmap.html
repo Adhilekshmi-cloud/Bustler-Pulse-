@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bustler Pulse — Issue Heatmap</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+
+    .header { background: #1e293b; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+    .logo { font-size: 22px; font-weight: 700; color: #38bdf8; }
+    .logo span { color: #f1f5f9; }
+
+    .main { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+    .page-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .page-sub { color: #94a3b8; margin-bottom: 40px; }
+
+    /* Nav links */
+    .nav-links { display: flex; gap: 12px; margin-bottom: 32px; }
+    .nav-link { padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; border: 1px solid #334155; color: #94a3b8; text-decoration: none; }
+    .nav-link:hover { background: #1e293b; color: #f1f5f9; }
+
+    /* Chart Card */
+    .chart-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; margin-bottom: 32px; }
+    .chart-title { font-size: 16px; font-weight: 600; color: #e2e8f0; margin-bottom: 24px; }
+    .chart-container { position: relative; height: 320px; }
+
+    /* Heatmap Grid */
+    .heatmap-section { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px; margin-bottom: 32px; }
+    .heatmap-title { font-size: 16px; font-weight: 600; color: #e2e8f0; margin-bottom: 8px; }
+    .heatmap-sub { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
+    .heatmap-grid { display: grid; gap: 8px; }
+    .heatmap-row { display: flex; align-items: center; gap: 8px; }
+    .heatmap-label { width: 100px; font-size: 13px; color: #94a3b8; text-align: right; text-transform: capitalize; }
+    .heatmap-cells { display: flex; gap: 6px; flex: 1; }
+    .heatmap-cell { flex: 1; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; cursor: pointer; transition: transform 0.1s; }
+    .heatmap-cell:hover { transform: scale(1.1); }
+    .week-headers { display: flex; gap: 6px; padding-left: 108px; margin-bottom: 4px; }
+    .week-header { flex: 1; text-align: center; font-size: 11px; color: #475569; }
+
+    /* Insight Cards */
+    .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+    .insight-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .insight-icon { font-size: 24px; margin-bottom: 12px; }
+    .insight-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .insight-value { font-size: 20px; font-weight: 800; color: #38bdf8; margin-bottom: 4px; }
+    .insight-desc { font-size: 12px; color: #94a3b8; }
+
+    .loading { text-align: center; padding: 60px; color: #475569; }
+    .empty { text-align: center; padding: 40px; color: #475569; background: #1e293b; border-radius: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Bustler <span>Pulse</span></div>
+  <span style="color:#94a3b8; font-size:13px;">Intelligence Layer</span>
+</div>
+
+<div class="main">
+  <div class="page-title">Issue Heatmap</div>
+  <div class="page-sub">Which issues spike at which time — helping the product team predict and prevent problems</div>
+
+  <!-- Nav -->
+  <div class="nav-links">
+    <a href="health.html" class="nav-link">🟢 System Health</a>
+    <a href="reports.html" class="nav-link">📋 Reports</a>
+    <a href="heatmap.html" class="nav-link" style="background:#1e293b; color:#f1f5f9;">🔥 Heatmap</a>
+  </div>
+
+  <div id="loading" class="loading">Loading heatmap data...</div>
+  <div id="content" style="display:none;">
+
+    <!-- Insight Cards -->
+    <div class="insights-grid">
+      <div class="insight-card">
+        <div class="insight-icon">🔥</div>
+        <div class="insight-title">Hottest Category</div>
+        <div class="insight-value" id="hottest-category">—</div>
+        <div class="insight-desc">Most reported issue type</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon">📅</div>
+        <div class="insight-title">Peak Week</div>
+        <div class="insight-value" id="peak-week">—</div>
+        <div class="insight-desc">Week with most issues</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon">📊</div>
+        <div class="insight-title">Total Tracked</div>
+        <div class="insight-value" id="total-tracked">—</div>
+        <div class="insight-desc">Issues in heatmap</div>
+      </div>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="chart-card">
+      <div class="chart-title">📊 Issues by Category — Bar Chart</div>
+      <div class="chart-container">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Heatmap Grid -->
+    <div class="heatmap-section">
+      <div class="heatmap-title">🔥 Category × Week Heatmap</div>
+      <div class="heatmap-sub">Darker = more issues. Hover over a cell to see the count.</div>
+      <div class="week-headers" id="week-headers"></div>
+      <div class="heatmap-grid" id="heatmap-grid"></div>
+    </div>
+
+    <!-- Empty state for no heatmap data -->
+    <div id="no-heatmap" class="empty" style="display:none;">
+      📭 No heatmap data yet — tickets need to be created first.<br/>
+      <span style="font-size:13px; margin-top:8px; display:block;">Submit some tickets and resolve them to see patterns appear here.</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = "https://bustler-pulse.onrender.com";
+
+  const COLORS = {
+    payment    : "#ef4444",
+    refund     : "#f97316",
+    delivery   : "#f59e0b",
+    quality    : "#22c55e",
+    no_response: "#38bdf8",
+    other      : "#8b5cf6"
+  };
+
+  function getHeatColor(count, max) {
+    if (count === 0) return "#1e293b";
+    const intensity = count / max;
+    if (intensity > 0.7) return "#ef4444";
+    if (intensity > 0.4) return "#f97316";
+    if (intensity > 0.2) return "#f59e0b";
+    return "#38bdf8";
+  }
+
+  async function loadHeatmap() {
+    try {
+      const [heatmapRes, summaryRes] = await Promise.all([
+        fetch(`${API}/reports/heatmap`).then(r => r.json()),
+        fetch(`${API}/reports/summary`).then(r => r.json())
+      ]);
+
+      const data = heatmapRes.heatmap;
+
+      document.getElementById("total-tracked").textContent = summaryRes.total_tickets;
+
+      if (data.length === 0) {
+        // Show bar chart with zero data and empty heatmap message
+        document.getElementById("no-heatmap").style.display = "block";
+        document.getElementById("hottest-category").textContent = "N/A";
+        document.getElementById("peak-week").textContent = "N/A";
+
+        // Still show bar chart from summary
+        buildBarChartEmpty();
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("content").style.display = "block";
+        return;
+      }
+
+      // Process data
+      const categories = [...new Set(data.map(d => d.category))];
+      const weeks      = [...new Set(data.map(d => d.week))].sort((a, b) => a - b);
+
+      // Build lookup: category + week → count
+      const lookup = {};
+      data.forEach(d => {
+        const key = `${d.category}_${d.week}`;
+        lookup[key] = d.count;
+      });
+
+      // Insights
+      const catTotals = {};
+      categories.forEach(cat => {
+        catTotals[cat] = data.filter(d => d.category === cat)
+          .reduce((sum, d) => sum + d.count, 0);
+      });
+      const hottestCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+      document.getElementById("hottest-category").textContent =
+        hottestCat ? hottestCat[0].replace("_", " ") : "N/A";
+
+      const weekTotals = {};
+      weeks.forEach(w => {
+        weekTotals[w] = data.filter(d => d.week === w)
+          .reduce((sum, d) => sum + d.count, 0);
+      });
+      const peakWeek = Object.entries(weekTotals).sort((a, b) => b[1] - a[1])[0];
+      document.getElementById("peak-week").textContent =
+        peakWeek ? `Week ${peakWeek[0]}` : "N/A";
+
+      // Bar chart
+      const barCtx = document.getElementById("barChart").getContext("2d");
+      new Chart(barCtx, {
+        type: "bar",
+        data: {
+          labels: categories.map(c => c.replace("_", " ")),
+          datasets: [{
+            label: "Total Issues",
+            data: categories.map(c => catTotals[c]),
+            backgroundColor: categories.map(c => COLORS[c] || "#8b5cf6"),
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+            y: { grid: { color: "#334155" }, ticks: { color: "#94a3b8" } }
+          }
+        }
+      });
+
+      // Heatmap grid
+      const maxCount = Math.max(...data.map(d => d.count));
+
+      // Week headers
+      const weekHeaders = document.getElementById("week-headers");
+      weeks.forEach(w => {
+        weekHeaders.innerHTML += `<div class="week-header">W${w}</div>`;
+      });
+
+      // Rows
+      const grid = document.getElementById("heatmap-grid");
+      categories.forEach(cat => {
+        const cells = weeks.map(w => {
+          const count = lookup[`${cat}_${w}`] || 0;
+          const color = getHeatColor(count, maxCount);
+          return `<div class="heatmap-cell"
+            style="background:${color}"
+            title="${cat} — Week ${w}: ${count} issue(s)"
+          >${count > 0 ? count : ""}</div>`;
+        }).join("");
+
+        grid.innerHTML += `
+          <div class="heatmap-row">
+            <div class="heatmap-label">${cat.replace("_", " ")}</div>
+            <div class="heatmap-cells">${cells}</div>
+          </div>`;
+      });
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("content").style.display = "block";
+
+    } catch (err) {
+      document.getElementById("loading").textContent =
+        "⚠️ Could not connect to backend.";
+    }
+  }
+
+  function buildBarChartEmpty() {
+    const barCtx = document.getElementById("barChart").getContext("2d");
+    new Chart(barCtx, {
+      type: "bar",
+      data: {
+        labels: ["payment", "refund", "delivery", "quality", "no response", "other"],
+        datasets: [{
+          label: "Total Issues",
+          data: [0, 0, 0, 0, 0, 0],
+          backgroundColor: Object.values(COLORS),
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+          y: { grid: { color: "#334155" }, ticks: { color: "#94a3b8" }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  loadHeatmap();
+</script>
+</body>
+</html>

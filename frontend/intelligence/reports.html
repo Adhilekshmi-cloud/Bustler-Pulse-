@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bustler Pulse — Product Feedback Reports</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+
+    .header { background: #1e293b; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+    .logo { font-size: 22px; font-weight: 700; color: #38bdf8; }
+    .logo span { color: #f1f5f9; }
+
+    .main { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+    .page-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .page-sub { color: #94a3b8; margin-bottom: 40px; }
+
+    /* Summary Cards */
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+    .summary-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; text-align: center; }
+    .summary-number { font-size: 36px; font-weight: 800; margin-bottom: 6px; }
+    .summary-label { color: #94a3b8; font-size: 13px; }
+    .blue { color: #38bdf8; }
+    .red { color: #ef4444; }
+    .green { color: #22c55e; }
+    .yellow { color: #f59e0b; }
+
+    /* Pattern Section */
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #e2e8f0; }
+    .pattern-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 16px; display: flex; align-items: center; gap: 20px; }
+    .pattern-rank { font-size: 28px; font-weight: 800; color: #475569; width: 40px; text-align: center; }
+    .pattern-info { flex: 1; }
+    .pattern-category { font-size: 16px; font-weight: 600; text-transform: capitalize; margin-bottom: 6px; }
+    .pattern-count { color: #94a3b8; font-size: 14px; }
+    .priority-badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .priority-high { background: #3a0000; color: #ef4444; border: 1px solid #ef4444; }
+    .priority-medium { background: #2d1f00; color: #f59e0b; border: 1px solid #f59e0b; }
+    .priority-low { background: #052e16; color: #22c55e; border: 1px solid #22c55e; }
+
+    /* Bar */
+    .bar-container { flex: 1; background: #0f172a; border-radius: 4px; height: 8px; margin: 0 20px; }
+    .bar-fill { height: 8px; border-radius: 4px; background: #38bdf8; }
+
+    /* Reports Table */
+    .reports-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .reports-table th { background: #1e293b; padding: 12px 16px; text-align: left; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+    .reports-table td { padding: 14px 16px; border-bottom: 1px solid #1e293b; font-size: 14px; vertical-align: top; }
+    .reports-table tr:hover td { background: #1e293b; }
+    .cat-badge { padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; background: #1e3a5f; color: #38bdf8; text-transform: capitalize; }
+    .csat-stars { color: #f59e0b; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .tab { padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #334155; color: #94a3b8; background: transparent; }
+    .tab.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+
+    .loading { text-align: center; padding: 60px; color: #475569; }
+    .empty { text-align: center; padding: 40px; color: #475569; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Bustler <span>Pulse</span></div>
+  <span style="color:#94a3b8; font-size:13px;">Product Feedback Intelligence</span>
+</div>
+
+<div class="main">
+  <div class="page-title">Product Feedback Reports</div>
+  <div class="page-sub">Patterns from resolved tickets — helping the product team fix root causes</div>
+
+  <div id="loading" class="loading">Loading reports...</div>
+  <div id="content" style="display:none;">
+
+    <!-- Summary -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-number blue" id="total-tickets">—</div>
+        <div class="summary-label">Total Tickets</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-number red" id="critical-tickets">—</div>
+        <div class="summary-label">Critical Issues</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-number green" id="resolved-tickets">—</div>
+        <div class="summary-label">Resolved</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-number yellow" id="avg-csat">—</div>
+        <div class="summary-label">Avg CSAT Score</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('patterns')">📊 Issue Patterns</button>
+      <button class="tab" onclick="showTab('reports')">📋 All Reports</button>
+    </div>
+
+    <!-- Patterns Tab -->
+    <div id="tab-patterns">
+      <div class="section-title">Most Common Issues — Ranked by Frequency</div>
+      <div id="patterns-list"></div>
+    </div>
+
+    <!-- Reports Tab -->
+    <div id="tab-reports" style="display:none;">
+      <div class="section-title">All Micro-Reports</div>
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>What Broke</th>
+            <th>How Fixed</th>
+            <th>CSAT</th>
+          </tr>
+        </thead>
+        <tbody id="reports-body"></tbody>
+      </table>
+      <div id="reports-empty" class="empty" style="display:none;">
+        No reports yet — resolve some tickets first!
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = "https://bustler-pulse.onrender.com";
+  let currentTab = "patterns";
+
+  function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById("tab-patterns").style.display = tab === "patterns" ? "block" : "none";
+    document.getElementById("tab-reports").style.display  = tab === "reports"  ? "block" : "none";
+  }
+
+  async function loadReports() {
+    try {
+      const [summary, patterns, allReports] = await Promise.all([
+        fetch(`${API}/reports/summary`).then(r => r.json()),
+        fetch(`${API}/reports/`).then(r => r.json()),
+        fetch(`${API}/reports/all`).then(r => r.json())
+      ]);
+
+      // Summary cards
+      document.getElementById("total-tickets").textContent    = summary.total_tickets;
+      document.getElementById("critical-tickets").textContent = summary.critical_tickets;
+      document.getElementById("resolved-tickets").textContent = summary.resolved_tickets;
+      document.getElementById("avg-csat").textContent         = summary.avg_csat ?? "N/A";
+
+      // Patterns
+      const maxCount = patterns.patterns.length > 0
+        ? Math.max(...patterns.patterns.map(p => p.total_issues)) : 1;
+
+      const list = document.getElementById("patterns-list");
+      list.innerHTML = "";
+
+      if (patterns.patterns.length === 0) {
+        list.innerHTML = '<div class="empty">No patterns yet — resolve some tickets to see insights!</div>';
+      } else {
+        patterns.patterns.forEach((p, i) => {
+          const pct = (p.total_issues / maxCount) * 100;
+          const priorityClass = p.priority.includes("High") ? "priority-high"
+            : p.priority.includes("Medium") ? "priority-medium" : "priority-low";
+
+          list.innerHTML += `
+            <div class="pattern-card">
+              <div class="pattern-rank">#${i + 1}</div>
+              <div class="pattern-info">
+                <div class="pattern-category">${p.category.replace("_", " ")}</div>
+                <div class="pattern-count">${p.total_issues} issue${p.total_issues !== 1 ? "s" : ""} reported · Avg CSAT: ${p.avg_csat ?? "N/A"}</div>
+              </div>
+              <div class="bar-container">
+                <div class="bar-fill" style="width:${pct}%"></div>
+              </div>
+              <span class="priority-badge ${priorityClass}">${p.priority.split("—")[0].trim()}</span>
+            </div>`;
+        });
+      }
+
+      // All reports table
+      const tbody = document.getElementById("reports-body");
+      tbody.innerHTML = "";
+
+      if (allReports.length === 0) {
+        document.getElementById("reports-empty").style.display = "block";
+      } else {
+        allReports.forEach(r => {
+          const stars = r.csat_score ? "★".repeat(r.csat_score) + "☆".repeat(5 - r.csat_score) : "N/A";
+          tbody.innerHTML += `
+            <tr>
+              <td>#${r.id}</td>
+              <td><span class="cat-badge">${r.category}</span></td>
+              <td>${r.what_broke}</td>
+              <td>${r.how_fixed ?? "—"}</td>
+              <td class="csat-stars">${stars}</td>
+            </tr>`;
+        });
+      }
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("content").style.display = "block";
+
+    } catch (err) {
+      document.getElementById("loading").textContent =
+        "⚠️ Could not connect to backend.";
+    }
+  }
+
+  loadReports();
+</script>
+</body>
+</html>
