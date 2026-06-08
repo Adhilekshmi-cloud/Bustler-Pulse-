@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bustler Pulse — Intelligence Layer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { text-align: center; padding: 40px; }
+    .logo { font-size: 32px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; }
+    .logo span { color: #f1f5f9; }
+    .subtitle { color: #94a3b8; margin-bottom: 48px; font-size: 16px; }
+    .cards { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 32px 28px; width: 200px; text-decoration: none; color: #f1f5f9; transition: all 0.2s; }
+    .card:hover { border-color: #38bdf8; transform: translateY(-4px); }
+    .card-icon { font-size: 36px; margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .card-desc { font-size: 13px; color: #94a3b8; }
+    .badge { display: inline-block; background: #1e3a5f; color: #38bdf8; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">Bustler <span>Pulse</span></div>
+    <div class="subtitle">Intelligence Layer — Built by Adhilekshmi R</div>
+
+    <div class="cards">
+      <a href="health.html" class="card">
+        <div class="card-icon">🟢</div>
+        <div class="card-title">System Health</div>
+        <div class="card-desc">Live status of support operations</div>
+      </a>
+      <a href="reports.html" class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Reports</div>
+        <div class="card-desc">Product feedback & pattern analysis</div>
+      </a>
+      <a href="heatmap.html" class="card">
+        <div class="card-icon">🔥</div>
+        <div class="card-title">Heatmap</div>
+        <div class="card-desc">Issue spikes by category & week</div>
+      </a>
+    </div>
+
+    <div class="badge">● Connected to https://bustler-pulse.onrender.com</div>
+  </div>
+</body>
+</html>
