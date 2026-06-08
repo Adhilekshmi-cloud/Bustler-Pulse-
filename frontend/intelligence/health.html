@@ -119,10 +119,13 @@
 
   async function loadHealth() {
     try {
+     document.getElementById("loading").textContent = "Waking up server... this may take 30-60 seconds on first load ⏳";
+      
       const [health, detailed] = await Promise.all([
-        fetch(`${API}/health/`).then(r => r.json()),
-        fetch(`${API}/health/detailed`).then(r => r.json())
+        fetch(`${API}/health/`, { signal: AbortSignal.timeout(60000) }).then(r => r.json()),
+        fetch(`${API}/health/detailed`, { signal: AbortSignal.timeout(60000) }).then(r => r.json())
       ]);
+      
 
       // Status card
       const card = document.getElementById("status-card");
