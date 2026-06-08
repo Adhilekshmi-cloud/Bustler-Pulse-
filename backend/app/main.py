@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
-from app.routers import tickets, reports, agents, health
+from app.routers import tickets, reports, agents, health, disputes
 
 # ── Create all database tables ───────────────────────────
 Base.metadata.create_all(bind=engine)
@@ -14,7 +14,7 @@ app = FastAPI(
     version     = "1.0.0"
 )
 
-# ── CORS — allows Anjali and Ambadi's frontend to call your API ──
+# ── CORS ─────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins     = ["*"],
@@ -28,6 +28,7 @@ app.include_router(tickets.router)
 app.include_router(reports.router)
 app.include_router(agents.router)
 app.include_router(health.router)
+app.include_router(disputes.router)
 
 # ── Root endpoint ────────────────────────────────────────
 @app.get("/")
