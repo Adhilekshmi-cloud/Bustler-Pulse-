@@ -112,8 +112,9 @@
           <tr>
             <th>ID</th>
             <th>Category</th>
-            <th>What Broke</th>
+            <th>What Broke & Why</th>
             <th>How Fixed</th>
+            <th>Resolved At</th>
             <th>CSAT</th>
           </tr>
         </thead>
@@ -191,15 +192,22 @@
         document.getElementById("reports-empty").style.display = "block";
       } else {
         allReports.forEach(r => {
-          const stars = r.csat_score ? "★".repeat(r.csat_score) + "☆".repeat(5 - r.csat_score) : "N/A";
+       const stars = r.csat_score ? "★".repeat(r.csat_score) + "☆".repeat(5 - r.csat_score) : "N/A";
+          const date  = new Date(r.created_at).toLocaleDateString();
+          const time  = new Date(r.created_at).toLocaleTimeString();
           tbody.innerHTML += `
             <tr>
               <td>#${r.id}</td>
               <td><span class="cat-badge">${r.category}</span></td>
-              <td>${r.what_broke}</td>
+              <td>
+                <div style="font-weight:600; margin-bottom:4px;">${r.what_broke}</div>
+                <div style="color:#94a3b8; font-size:12px;">Why: ${r.why_it_happened ?? "—"}</div>
+              </td>
               <td>${r.how_fixed ?? "—"}</td>
+              <td style="color:#94a3b8; font-size:12px;">${date}<br/>${time}</td>
               <td class="csat-stars">${stars}</td>
             </tr>`;
+           
         });
       }
 
