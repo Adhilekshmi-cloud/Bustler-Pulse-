@@ -91,3 +91,13 @@ class Report(Base):
     created_at      = Column(DateTime, default=datetime.utcnow)
 
     ticket = relationship("Ticket", back_populates="report")
+# ── Users Table ─────────────────────────────────────────
+class User(Base):
+    __tablename__ = "users"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    username   = Column(String, unique=True, nullable=False)
+    email      = Column(String, unique=True, nullable=False)
+    password   = Column(String, nullable=False)  # hashed
+    role       = Column(String, default="product_team")  # product_team / admin
+    created_at = Column(DateTime, default=datetime.utcnow)

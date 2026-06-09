@@ -91,3 +91,19 @@ class HealthResponse(BaseModel):
     critical_tickets: int
     resolved_today: int
     message: str
+# ── Auth Schemas ────────────────────────────────────────
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+    role: Optional[str] = "product_team"
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    username: str
+    role: str    
