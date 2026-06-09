@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bustler Pulse — Intelligence Layer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
+    .header { background: white; padding: 16px 40px; border-bottom: 3px solid #E8232A; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .logo { font-size: 22px; font-weight: 800; color: #E8232A; }
+    .logo span { color: #00A99D; }
+    .main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 20px; }
+    .container { text-align: center; max-width: 700px; }
+    .badge { display: inline-block; background: #fde8e8; color: #E8232A; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 20px; }
+    .title { font-size: 36px; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; }
+    .title span { color: #E8232A; }
+    .subtitle { color: #666; font-size: 16px; margin-bottom: 48px; }
+    .cards { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+    .card { background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 32px 24px; width: 190px; text-decoration: none; color: #1a1a1a; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .card:hover { border-color: #E8232A; transform: translateY(-4px); box-shadow: 0 8px 24px rgba(232,35,42,0.15); }
+    .card-icon { font-size: 36px; margin-bottom: 14px; }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: #1a1a1a; }
+    .card-desc { font-size: 12px; color: #888; }
+    .footer { text-align: center; padding: 20px; color: #aaa; font-size: 13px; }
+    .api-badge { display: inline-block; background: #e0f7f5; color: #00A99D; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Bustler <span>Pulse</span></div>
+  </div>
+
+  <div class="main">
+    <div class="container">
+      <div class="badge">🧠 Intelligence Layer</div>
+      <div class="title">Bustler <span>Pulse</span></div>
+      <div class="subtitle">Built by Adhilekshmi R · Providence College of Engineering</div>
+
+      <div class="cards">
+        <a href="health.html" class="card">
+          <div class="card-icon">🟢</div>
+          <div class="card-title">System Health</div>
+          <div class="card-desc">Live status of support operations</div>
+        </a>
+        <a href="reports.html" class="card">
+          <div class="card-icon">📋</div>
+          <div class="card-title">Reports</div>
+          <div class="card-desc">Product feedback & patterns</div>
+        </a>
+        <a href="heatmap.html" class="card">
+          <div class="card-icon">🔥</div>
+          <div class="card-title">Heatmap</div>
+          <div class="card-desc">Issue spikes by week</div>
+        </a>
+      </div>
+
+      <div class="api-badge">● API: https://bustler-pulse.onrender.com</div>
+    </div>
+  </div>
+
+  <div class="footer">Bustler Pulse · Bustler Summer Internship 2026</div>
+</body>
+</html>
