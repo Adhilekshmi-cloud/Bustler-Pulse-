@@ -6,56 +6,50 @@
   <title>Bustler Pulse — System Health</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
 
-    /* Header */
-    .header { background: #1e293b; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-    .logo { font-size: 22px; font-weight: 700; color: #38bdf8; }
-    .logo span { color: #f1f5f9; }
-    .live-badge { background: #22c55e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .header { background: white; padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #E8232A; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .logo { font-size: 22px; font-weight: 800; color: #E8232A; }
+    .logo span { color: #00A99D; }
+    .live-badge { background: #00A99D; color: white; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
-    /* Main */
-    .main { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
-    .page-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-    .page-sub { color: #94a3b8; margin-bottom: 40px; }
+    .main { max-width: 960px; margin: 0 auto; padding: 40px 20px; }
+    .page-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; color: #1a1a1a; }
+    .page-sub { color: #666; margin-bottom: 36px; font-size: 15px; }
 
-    /* Status Card */
-    .status-card { border-radius: 16px; padding: 32px; margin-bottom: 32px; display: flex; align-items: center; gap: 24px; }
-    .status-operational { background: linear-gradient(135deg, #052e16, #14532d); border: 1px solid #22c55e; }
-    .status-degraded { background: linear-gradient(135deg, #1c1300, #3f2c00); border: 1px solid #f59e0b; }
-    .status-incident { background: linear-gradient(135deg, #1a0000, #3a0000); border: 1px solid #ef4444; }
-    .status-icon { font-size: 48px; }
-    .status-info h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-    .status-info p { color: #94a3b8; font-size: 15px; }
+    .status-card { border-radius: 16px; padding: 28px 32px; margin-bottom: 32px; display: flex; align-items: center; gap: 20px; }
+    .status-operational { background: linear-gradient(135deg, #e8f8f5, #d0f0ea); border: 2px solid #00A99D; }
+    .status-degraded { background: linear-gradient(135deg, #fff8e8, #ffefc0); border: 2px solid #f59e0b; }
+    .status-incident { background: linear-gradient(135deg, #fef0f0, #fdd8d8); border: 2px solid #E8232A; }
+    .status-icon { font-size: 44px; }
+    .status-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: #1a1a1a; }
+    .status-info p { color: #555; font-size: 14px; }
 
-    /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
-    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; text-align: center; }
-    .stat-number { font-size: 40px; font-weight: 800; margin-bottom: 8px; }
-    .stat-label { color: #94a3b8; font-size: 14px; }
-    .open { color: #38bdf8; }
-    .critical { color: #ef4444; }
+    .stat-card { background: white; border: 1px solid #e5e7eb; border-radius: 14px; padding: 24px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-number { font-size: 42px; font-weight: 800; margin-bottom: 6px; }
+    .stat-label { color: #666; font-size: 14px; font-weight: 500; }
+    .open { color: #00A99D; }
+    .critical { color: #E8232A; }
     .resolved { color: #22c55e; }
 
-    /* Breakdown */
-    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #e2e8f0; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #1a1a1a; }
     .breakdown-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
-    .breakdown-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
-    .breakdown-card h4 { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
-    .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b; }
+    .breakdown-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .breakdown-card h4 { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
+    .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
     .breakdown-row:last-child { border-bottom: none; }
-    .breakdown-label { font-size: 14px; color: #cbd5e1; }
-    .breakdown-badge { padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; }
-    .badge-open { background: #1e3a5f; color: #38bdf8; }
-    .badge-critical { background: #3a0000; color: #ef4444; }
-    .badge-resolved { background: #052e16; color: #22c55e; }
+    .breakdown-label { font-size: 14px; color: #444; }
+    .breakdown-badge { padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+    .badge-open { background: #e0f7f5; color: #00A99D; }
+    .badge-critical { background: #fde8e8; color: #E8232A; }
+    .badge-resolved { background: #dcfce7; color: #16a34a; }
 
-    /* Footer */
-    .footer { text-align: center; color: #475569; font-size: 13px; margin-top: 40px; }
-    .refresh-btn { background: #38bdf8; color: #0f172a; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 16px; }
-    .refresh-btn:hover { background: #0ea5e9; }
-    .loading { text-align: center; padding: 60px; color: #475569; }
+    .refresh-btn { background: #E8232A; color: white; border: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .refresh-btn:hover { background: #c91e20; }
+    .loading { text-align: center; padding: 60px; color: #999; }
+    .footer { text-align: center; color: #aaa; font-size: 13px; margin-top: 40px; padding-bottom: 40px; }
   </style>
 </head>
 <body>
@@ -63,7 +57,7 @@
 <div class="header">
   <div class="logo">Bustler <span>Pulse</span></div>
   <div style="display:flex; align-items:center; gap:12px;">
-    <span style="color:#94a3b8; font-size:13px;" id="last-updated">Loading...</span>
+    <span style="color:#888; font-size:13px;" id="last-updated">Loading...</span>
     <span class="live-badge">● LIVE</span>
   </div>
 </div>
@@ -75,7 +69,6 @@
   <div id="loading" class="loading">Loading system status...</div>
   <div id="content" style="display:none;">
 
-    <!-- Status Banner -->
     <div class="status-card" id="status-card">
       <div class="status-icon" id="status-icon">✅</div>
       <div class="status-info">
@@ -84,7 +77,6 @@
       </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-number open" id="open-count">—</div>
@@ -100,7 +92,6 @@
       </div>
     </div>
 
-    <!-- Category Breakdown -->
     <div class="section-title">Category Breakdown</div>
     <div class="breakdown-grid" id="breakdown-grid"></div>
 
@@ -110,24 +101,19 @@
   </div>
 </div>
 
-<div class="footer">
-  Bustler Pulse Intelligence Layer · Built by Adhilekshmi R
-</div>
+<div class="footer">Bustler Pulse Intelligence Layer · Built by Adhilekshmi R</div>
 
 <script>
   const API = "https://bustler-pulse.onrender.com";
 
   async function loadHealth() {
     try {
-     document.getElementById("loading").textContent = "Waking up server... this may take 30-60 seconds on first load ⏳";
-      
+      document.getElementById("loading").textContent = "Loading...";
       const [health, detailed] = await Promise.all([
-        fetch(`${API}/health/`, { signal: AbortSignal.timeout(60000) }).then(r => r.json()),
-        fetch(`${API}/health/detailed`, { signal: AbortSignal.timeout(60000) }).then(r => r.json())
+        fetch(`${API}/health/`).then(r => r.json()),
+        fetch(`${API}/health/detailed`).then(r => r.json())
       ]);
-      
 
-      // Status card
       const card = document.getElementById("status-card");
       card.className = "status-card";
       if (health.status === "operational") {
@@ -144,50 +130,33 @@
         document.getElementById("status-title").textContent = "Active Incident";
       }
       document.getElementById("status-message").textContent = health.message;
-
-      // Stats
       document.getElementById("open-count").textContent     = health.open_tickets;
       document.getElementById("critical-count").textContent = health.critical_tickets;
       document.getElementById("resolved-count").textContent = health.resolved_today;
 
-      // Category breakdown
       const grid = document.getElementById("breakdown-grid");
       grid.innerHTML = "";
-      const categories = Object.entries(detailed.breakdown);
-      categories.forEach(([cat, data]) => {
+      Object.entries(detailed.breakdown).forEach(([cat, data]) => {
         grid.innerHTML += `
           <div class="breakdown-card">
             <h4>${cat.replace("_", " ")}</h4>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Open</span>
-              <span class="breakdown-badge badge-open">${data.open}</span>
-            </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Critical</span>
-              <span class="breakdown-badge badge-critical">${data.critical}</span>
-            </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Resolved</span>
-              <span class="breakdown-badge badge-resolved">${data.resolved}</span>
-            </div>
+            <div class="breakdown-row"><span class="breakdown-label">Open</span><span class="breakdown-badge badge-open">${data.open}</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Critical</span><span class="breakdown-badge badge-critical">${data.critical}</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Resolved</span><span class="breakdown-badge badge-resolved">${data.resolved}</span></div>
           </div>`;
       });
 
-      // Timestamp
-      document.getElementById("last-updated").textContent =
-        "Last updated: " + new Date().toLocaleTimeString();
-
+      document.getElementById("last-updated").textContent = "Last updated: " + new Date().toLocaleTimeString();
       document.getElementById("loading").style.display = "none";
       document.getElementById("content").style.display = "block";
 
     } catch (err) {
-      document.getElementById("loading").textContent =
-        "⚠️ Could not connect to backend. Make sure server is running.";
+      document.getElementById("loading").textContent = "⚠️ Could not connect to backend.";
     }
   }
 
   loadHealth();
-  setInterval(loadHealth, 30000); // Auto-refresh every 30 seconds
+  setInterval(loadHealth, 30000);
 </script>
 </body>
 </html>
