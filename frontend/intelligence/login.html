@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bustler Pulse — Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .header { background: white; padding: 16px 40px; border-bottom: 3px solid #E8232A; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .logo { font-size: 22px; font-weight: 800; color: #E8232A; }
+    .logo span { color: #00A99D; }
+
+    .main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+
+    .login-card { background: white; border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); border: 1px solid #e5e7eb; }
+
+    .login-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
+    .login-title { font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 6px; color: #1a1a1a; }
+    .login-sub { font-size: 14px; color: #888; text-align: center; margin-bottom: 32px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #444; margin-bottom: 8px; display: block; }
+    .form-input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; color: #1a1a1a; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: #E8232A; }
+
+    .login-btn { width: 100%; padding: 14px; background: #E8232A; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+    .login-btn:hover { background: #c91e20; }
+    .login-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .error-msg { background: #fde8e8; color: #E8232A; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; border: 1px solid #fca5a5; }
+    .success-msg { background: #dcfce7; color: #16a34a; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; border: 1px solid #86efac; }
+
+    .divider { border: none; border-top: 1px solid #f3f4f6; margin: 24px 0; }
+
+    .register-link { text-align: center; font-size: 13px; color: #888; }
+    .register-link a { color: #00A99D; font-weight: 600; cursor: pointer; text-decoration: none; }
+
+    .tab-btns { display: flex; gap: 8px; margin-bottom: 28px; }
+    .tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 2px solid #e5e7eb; font-size: 14px; font-weight: 600; cursor: pointer; background: white; color: #888; transition: all 0.2s; }
+    .tab-btn.active { background: #E8232A; color: white; border-color: #E8232A; }
+
+    .footer { text-align: center; padding: 20px; color: #aaa; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Bustler <span>Pulse</span></div>
+</div>
+
+<div class="main">
+  <div class="login-card">
+    <div class="login-icon">🧠</div>
+    <div class="login-title">Intelligence Layer</div>
+    <div class="login-sub">Sign in to access system health, reports and heatmap</div>
+
+    <!-- Tabs -->
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="showTab('login')">Sign In</button>
+      <button class="tab-btn" onclick="showTab('register')">Register</button>
+    </div>
+
+    <!-- Error / Success -->
+    <div class="error-msg" id="error-msg"></div>
+    <div class="success-msg" id="success-msg"></div>
+
+    <!-- Login Form -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-input" id="login-username" placeholder="Enter your username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="Enter your password" />
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In →</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-input" id="reg-username" placeholder="Choose a username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="reg-email" placeholder="Enter your email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="reg-password" placeholder="Choose a password" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-input" id="reg-role">
+          <option value="product_team">Product Team</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="login-btn" id="reg-btn" onclick="doRegister()">Create Account →</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">Bustler Pulse Intelligence Layer · Internal access only</div>
+
+<script>
+  const API = "https://bustler-pulse.onrender.com";
+
+  // Check if already logged in
+  const token = localStorage.getItem("bp_token");
+  if (token) {
+    window.location.href = "intelligence.html";
+  }
+
+  function showTab(tab) {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById("login-form").style.display    = tab === "login"    ? "block" : "none";
+    document.getElementById("register-form").style.display = tab === "register" ? "block" : "none";
+    hideMessages();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("error-msg");
+    el.textContent = msg;
+    el.style.display = "block";
+    document.getElementById("success-msg").style.display = "none";
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById("success-msg");
+    el.textContent = msg;
+    el.style.display = "block";
+    document.getElementById("error-msg").style.display = "none";
+  }
+
+  function hideMessages() {
+    document.getElementById("error-msg").style.display = "none";
+    document.getElementById("success-msg").style.display = "none";
+  }
+
+  async function doLogin() {
+    const username = document.getElementById("login-username").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+
+    if (!username || !password) {
+      showError("Please enter username and password");
+      return;
+    }
+
+    const btn = document.getElementById("login-btn");
+    btn.disabled = true;
+    btn.textContent = "Signing in...";
+
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("bp_token", data.access_token);
+        localStorage.setItem("bp_username", data.username);
+        localStorage.setItem("bp_role", data.role);
+        showSuccess("Login successful! Redirecting...");
+        setTimeout(() => { window.location.href = "intelligence.html"; }, 1000);
+      } else {
+        showError(data.detail || "Invalid username or password");
+        btn.disabled = false;
+        btn.textContent = "Sign In →";
+      }
+
+    } catch (err) {
+      showError("Could not connect to server. Try again.");
+      btn.disabled = false;
+      btn.textContent = "Sign In →";
+    }
+  }
+
+  async function doRegister() {
+    const username = document.getElementById("reg-username").value.trim();
+    const email    = document.getElementById("reg-email").value.trim();
+    const password = document.getElementById("reg-password").value.trim();
+    const role     = document.getElementById("reg-role").value;
+
+    if (!username || !email || !password) {
+      showError("Please fill in all fields");
+      return;
+    }
+
+    const btn = document.getElementById("reg-btn");
+    btn.disabled = true;
+    btn.textContent = "Creating account...";
+
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password, role })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showSuccess("Account created! You can now sign in.");
+        btn.disabled = false;
+        btn.textContent = "Create Account →";
+        // Switch to login tab
+        setTimeout(() => {
+          document.querySelectorAll(".tab-btn")[0].click();
+          document.getElementById("login-username").value = username;
+        }, 1500);
+      } else {
+        showError(data.detail || "Registration failed");
+        btn.disabled = false;
+        btn.textContent = "Create Account →";
+      }
+
+    } catch (err) {
+      showError("Could not connect to server. Try again.");
+      btn.disabled = false;
+      btn.textContent = "Create Account →";
+    }
+  }
+
+  // Allow Enter key
+  document.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      const loginForm = document.getElementById("login-form");
+      if (loginForm.style.display !== "none") doLogin();
+      else doRegister();
+    }
+  });
+</script>
+</body>
+</html>

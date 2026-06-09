@@ -111,8 +111,10 @@
 </div>
 
 <script>
+  const token = localStorage.getItem("bp_token");
+  if (!token) { window.location.href = "login.html"; }
   const API = "https://bustler-pulse.onrender.com";
-
+  
   const COLORS = {
     payment    : "#E8232A",
     refund     : "#f97316",

@@ -7,7 +7,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
-    .header { background: white; padding: 16px 40px; border-bottom: 3px solid #E8232A; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { background: white; padding: 16px 40px; border-bottom: 3px solid #E8232A; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
     .logo { font-size: 22px; font-weight: 800; color: #E8232A; }
     .logo span { color: #00A99D; }
     .main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 20px; }
@@ -27,8 +27,13 @@
   </style>
 </head>
 <body>
+
   <div class="header">
     <div class="logo">Bustler <span>Pulse</span></div>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <span style="font-size:13px; color:#888;" id="welcome-msg"></span>
+      <button onclick="logout()" style="background:#fde8e8; color:#E8232A; border:1px solid #E8232A; padding:6px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Logout</button>
+    </div>
   </div>
 
   <div class="main">
@@ -60,5 +65,22 @@
   </div>
 
   <div class="footer">Bustler Pulse · Bustler Summer Internship 2026</div>
+
+<script>
+  // Check login
+  const token    = localStorage.getItem("bp_token");
+  const username = localStorage.getItem("bp_username");
+  if (!token) { window.location.href = "login.html"; }
+
+  document.getElementById("welcome-msg").textContent = "👋 " + (username || "User");
+
+  function logout() {
+    localStorage.removeItem("bp_token");
+    localStorage.removeItem("bp_username");
+    localStorage.removeItem("bp_role");
+    window.location.href = "login.html";
+  }
+</script>
+
 </body>
 </html>
