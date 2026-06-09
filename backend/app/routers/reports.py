@@ -11,15 +11,9 @@ from app.services.report_generator import analyse_patterns, get_heatmap_data
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
 
-# ── GET /reports ─────────────────────────────────────────
-# Returns all micro-reports grouped by category
-# Used by your product feedback page
-# Shows which issues are most common → product team fixes them
-
 @router.get("/")
 def get_reports(db: Session = Depends(get_db)):
     patterns = analyse_patterns(db)
-
     return {
         "total_reports" : db.query(Report).count(),
         "generated_at"  : datetime.utcnow().isoformat(),
@@ -27,34 +21,20 @@ def get_reports(db: Session = Depends(get_db)):
     }
 
 
-# ── GET /reports/all ─────────────────────────────────────
-# Returns every individual report ever created
-# Full list for the ops team to review
-
 @router.get("/all", response_model=List[ReportResponse])
 def get_all_reports(db: Session = Depends(get_db)):
     reports = db.query(Report).order_by(Report.created_at.desc()).all()
     return reports
 
 
-# ── GET /reports/heatmap ─────────────────────────────────
-# Returns ticket counts grouped by category and week
-# Used by your heatmap UI page
-# Shows spikes — e.g. payment issues always spike in week 3
-
 @router.get("/heatmap")
 def get_heatmap(db: Session = Depends(get_db)):
     heatmap_data = get_heatmap_data(db)
-
     return {
         "generated_at" : datetime.utcnow().isoformat(),
         "heatmap"      : heatmap_data
     }
 
-
-# ── GET /reports/summary ─────────────────────────────────
-# Quick summary card for the ops dashboard
-# Shows key numbers at a glance
 
 @router.get("/summary")
 def get_summary(db: Session = Depends(get_db)):
@@ -95,6 +75,53 @@ def get_summary(db: Session = Depends(get_db)):
     }
 
 
-# ── GET /reports/{ticket_id} ─────────────────────────────
-# Get the micro-report for a specific ticket
-# Used by Anjali (user tracking) and Ambadi (agent view)
+@router.get("/detailed")
+def get_detailed_reports(db: Session = Depends(get_db)):
+    from app.models import Agent
+    reports = db.query(Report).order_by(Report.created_at.desc()).all()
+
+    detailed = []
+    for r in reports:
+        ticket = db.query(Ticket).filter(Ticket.id == r.ticket_id).first()
+
+        agent_name = "Unassigned"
+        if ticket and ticket.assigned_agent_id:
+            agent = db.query(Agent).filter(
+                Agent.id == ticket.assigned_agent_id
+            ).first()
+            if agent:
+                agent_name = agent.name
+
+        detailed.append({
+            "report_id"      : r.id,
+            "ticket_id"      : r.ticket_id,
+            "category"       : r.category,
+            "what_broke"     : r.what_broke,
+            "why_it_happened": r.why_it_happened,
+            "how_fixed"      : r.how_fixed,
+            "csat_score"     : r.csat_score,
+            "resolved_by"    : agent_name,
+            "resolved_at"    : r.created_at.isoformat(),
+            "user_id"        : ticket.user_id if ticket else "unknown",
+            "description"    : ticket.description if ticket else "—"
+        })
+
+    return {
+        "total"   : len(detailed),
+        "reports" : detailed
+    }
+
+
+@router.get("/{ticket_id}", response_model=ReportResponse)
+def get_report_by_ticket(ticket_id: int, db: Session = Depends(get_db)):
+    from fastapi import HTTPException
+    report = db.query(Report).filter(
+        Report.ticket_id == ticket_id
+    ).first()
+
+    if not report:
+        raise HTTPException(
+            status_code=404,
+            detail="No report found for this ticket yet"
+        )
+    return report
