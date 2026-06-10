@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bustler Pulse — Agent Performance</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+
+    .header { background: white; padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #E8232A; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .logo { font-size: 22px; font-weight: 800; color: #E8232A; }
+    .logo span { color: #00A99D; }
+
+    .main { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+    .page-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+    .page-sub { color: #666; margin-bottom: 36px; font-size: 15px; }
+
+    /* Nav */
+    .nav-links { display: flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap; }
+    .nav-link { padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; border: 2px solid #e5e7eb; color: #888; text-decoration: none; background: white; }
+    .nav-link:hover { border-color: #E8232A; color: #E8232A; }
+    .nav-link.active { background: #E8232A; color: white; border-color: #E8232A; }
+
+    /* Summary */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 36px; }
+    .summary-card { background: white; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .summary-number { font-size: 36px; font-weight: 800; margin-bottom: 6px; }
+    .summary-label { color: #666; font-size: 13px; font-weight: 500; }
+    .red { color: #E8232A; }
+    .teal { color: #00A99D; }
+    .gold { color: #f59e0b; }
+
+    /* Leaderboard */
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #1a1a1a; }
+
+    .leaderboard { display: flex; flex-direction: column; gap: 14px; margin-bottom: 36px; }
+    .agent-card { background: white; border: 2px solid #e5e7eb; border-radius: 14px; padding: 20px 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: all 0.2s; }
+    .agent-card:hover { border-color: #E8232A; transform: translateX(4px); }
+    .agent-rank { font-size: 24px; font-weight: 800; width: 40px; text-align: center; }
+    .rank-1 { color: #f59e0b; }
+    .rank-2 { color: #94a3b8; }
+    .rank-3 { color: #cd7c2a; }
+    .rank-other { color: #cbd5e1; }
+
+    .agent-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: white; flex-shrink: 0; }
+
+    .agent-info { flex: 1; }
+    .agent-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .agent-specialty { font-size: 12px; color: #888; text-transform: capitalize; margin-bottom: 8px; }
+    .agent-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .agent-stat { font-size: 12px; color: #555; }
+    .agent-stat strong { color: #1a1a1a; font-weight: 700; }
+
+    .csat-bar-container { width: 120px; }
+    .csat-label { font-size: 11px; color: #888; margin-bottom: 4px; text-align: right; }
+    .csat-bar { height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden; }
+    .csat-fill { height: 8px; border-radius: 4px; background: #00A99D; transition: width 0.5s; }
+    .csat-score { font-size: 18px; font-weight: 800; color: #00A99D; text-align: center; margin-top: 4px; }
+
+    .specialty-badge { padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: capitalize; }
+    .spec-payment { background: #fde8e8; color: #E8232A; }
+    .spec-quality { background: #e0f7f5; color: #00A99D; }
+    .spec-no_response { background: #ede9fe; color: #6366f1; }
+    .spec-delivery { background: #fff8e8; color: #d97706; }
+    .spec-other { background: #f3f4f6; color: #888; }
+
+    /* Chart */
+    .chart-card { background: white; border: 1px solid #e5e7eb; border-radius: 14px; padding: 28px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .chart-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+    .chart-container { position: relative; height: 280px; }
+
+    .loading { text-align: center; padding: 60px; color: #999; }
+    .empty { text-align: center; padding: 40px; color: #999; background: white; border-radius: 12px; border: 1px solid #e5e7eb; }
+
+    .top-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #fff8e8; color: #d97706; margin-left: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Bustler <span>Pulse</span></div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span style="font-size:13px; color:#888;" id="welcome-msg"></span>
+    <button onclick="logout()" style="background:#fde8e8; color:#E8232A; border:1px solid #E8232A; padding:6px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Logout</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">Agent Performance</div>
+  <div class="page-sub">Live performance tracking for every ops agent — ranked by satisfaction score</div>
+
+  <!-- Nav -->
+  <div class="nav-links">
+    <a href="intelligence.html" class="nav-link">🏠 Home</a>
+    <a href="health.html" class="nav-link">🟢 Health</a>
+    <a href="reports.html" class="nav-link">📋 Reports</a>
+    <a href="heatmap.html" class="nav-link">🔥 Heatmap</a>
+    <a href="agents.html" class="nav-link active">👥 Agents</a>
+  </div>
+
+  <div id="loading" class="loading">Loading agent data...</div>
+  <div id="content" style="display:none;">
+
+    <!-- Summary -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-number red" id="total-agents">—</div>
+        <div class="summary-label">Total Agents</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-number teal" id="total-solved">—</div>
+        <div class="summary-label">Total Tickets Solved</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-number gold" id="top-agent">—</div>
+        <div class="summary-label">Top Agent</div>
+      </div>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="chart-card">
+      <div class="chart-title">📊 Tickets Solved by Agent</div>
+      <div class="chart-container">
+        <canvas id="agentChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="section-title">🏆 Agent Leaderboard — Ranked by CSAT Score</div>
+    <div class="leaderboard" id="leaderboard"></div>
+
+  </div>
+</div>
+
+<script>
+  const API = "https://bustler-pulse.onrender.com";
+
+  // Login check
+  const token    = localStorage.getItem("bp_token");
+  const username = localStorage.getItem("bp_username");
+  if (!token) { window.location.href = "login.html"; }
+  document.getElementById("welcome-msg").textContent = "👋 " + (username || "User");
+
+  function logout() {
+    localStorage.removeItem("bp_token");
+    localStorage.removeItem("bp_username");
+    localStorage.removeItem("bp_role");
+    window.location.href = "login.html";
+  }
+
+  const AVATAR_COLORS = ["#E8232A", "#00A99D", "#6366f1", "#f59e0b", "#16a34a", "#ec4899"];
+
+  function getSpecialtyClass(specialty) {
+    if (!specialty) return "spec-other";
+    return `spec-${specialty}`;
+  }
+
+  function getRankClass(rank) {
+    if (rank === 1) return "rank-1";
+    if (rank === 2) return "rank-2";
+    if (rank === 3) return "rank-3";
+    return "rank-other";
+  }
+
+  function getRankEmoji(rank) {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return `#${rank}`;
+  }
+
+  async function loadAgents() {
+    try {
+      const [leaderboardRes, allAgentsRes] = await Promise.all([
+        fetch(`${API}/agents/leaderboard/top`).then(r => r.json()),
+        fetch(`${API}/agents/`).then(r => r.json())
+      ]);
+
+      const agents     = leaderboardRes.leaderboard;
+      const totalAgents = leaderboardRes.total_agents;
+
+      // Summary
+      document.getElementById("total-agents").textContent = totalAgents;
+      const totalSolved = agents.reduce((s, a) => s + a.tickets_solved, 0);
+      document.getElementById("total-solved").textContent = totalSolved;
+      document.getElementById("top-agent").textContent    = agents.length > 0 ? agents[0].name.split(" ")[0] : "N/A";
+
+      if (agents.length === 0) {
+        document.getElementById("leaderboard").innerHTML = '<div class="empty">No agents yet — add agents via the API docs!</div>';
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("content").style.display = "block";
+        return;
+      }
+
+      // Bar chart
+      const barCtx = document.getElementById("agentChart").getContext("2d");
+      new Chart(barCtx, {
+        type: "bar",
+        data: {
+          labels: agents.map(a => a.name),
+          datasets: [{
+            label: "Tickets Solved",
+            data: agents.map(a => a.tickets_solved),
+            backgroundColor: agents.map((_, i) => AVATAR_COLORS[i % AVATAR_COLORS.length]),
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: "#888" } },
+            y: { grid: { color: "#f3f4f6" }, ticks: { color: "#888" }, beginAtZero: true }
+          }
+        }
+      });
+
+      // Leaderboard
+      const leaderboard = document.getElementById("leaderboard");
+      leaderboard.innerHTML = "";
+
+      agents.forEach((agent, i) => {
+        const rank       = i + 1;
+        const csatPct    = (agent.avg_csat / 5) * 100;
+        const color      = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const initials   = agent.name.split(" ").map(n => n[0]).join("").toUpperCase();
+        const topBadge   = rank === 1 ? '<span class="top-badge">⭐ Top Agent</span>' : "";
+
+        leaderboard.innerHTML += `
+          <div class="agent-card">
+            <div class="agent-rank ${getRankClass(rank)}">${getRankEmoji(rank)}</div>
+            <div class="agent-avatar" style="background:${color}">${initials}</div>
+            <div class="agent-info">
+              <div class="agent-name">${agent.name} ${topBadge}</div>
+              <div style="margin-bottom:8px;">
+                <span class="specialty-badge ${getSpecialtyClass(agent.specialty)}">${agent.specialty || "general"}</span>
+              </div>
+              <div class="agent-stats">
+                <div class="agent-stat">🎫 <strong>${agent.tickets_solved}</strong> tickets solved</div>
+                <div class="agent-stat">⚡ <strong>${agent.avg_speed_hrs}h</strong> avg speed</div>
+              </div>
+            </div>
+            <div class="csat-bar-container">
+              <div class="csat-label">CSAT Score</div>
+              <div class="csat-bar">
+                <div class="csat-fill" style="width:${csatPct}%"></div>
+              </div>
+              <div class="csat-score">${agent.avg_csat}/5</div>
+            </div>
+          </div>`;
+      });
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("content").style.display = "block";
+
+    } catch (err) {
+      document.getElementById("loading").textContent = "⚠️ Could not connect to backend.";
+    }
+  }
+
+  loadAgents();
+</script>
+</body>
+</html>
