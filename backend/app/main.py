@@ -14,16 +14,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = [
-        "*",
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:3000",
-        "http://localhost:3000",
-        "https://bustler-frontend.vercel.app",
-        "https://bustler-pulse-six.vercel.app",
-        "https://bustler-pulse.vercel.app"
-    ],
+    allow_origins     = ["*"],
     allow_credentials = False,
     allow_methods     = ["*"],
     allow_headers     = ["*"]
