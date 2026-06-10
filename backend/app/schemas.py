@@ -109,3 +109,22 @@ class TokenResponse(BaseModel):
     token_type: str
     username: str
     role: str    
+# ── Feedback Schemas ────────────────────────────────────
+class FeedbackCreate(BaseModel):
+    ticket_id  : int
+    user       : str
+    csat_score : int
+    comment    : Optional[str] = None
+    tag        : Optional[str] = None
+
+class FeedbackResponse(BaseModel):
+    id         : int
+    ticket_id  : int
+    user       : str
+    csat_score : int
+    comment    : Optional[str]
+    tag        : Optional[str]
+    created_at : datetime
+
+    class Config:
+        from_attributes = True    

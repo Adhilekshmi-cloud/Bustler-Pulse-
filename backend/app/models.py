@@ -102,3 +102,16 @@ class User(Base):
     password   = Column(String, nullable=False)  # hashed
     role       = Column(String, default="product_team")  # product_team / admin
     created_at = Column(DateTime, default=datetime.utcnow)
+# ── Feedback Table ───────────────────────────────────────
+class Feedback(Base):
+    __tablename__ = "feedback"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    ticket_id  = Column(Integer, ForeignKey("tickets.id"), nullable=False)
+    user       = Column(String, nullable=False)
+    csat_score = Column(Integer, nullable=False)
+    comment    = Column(String, nullable=True)
+    tag        = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    ticket = relationship("Ticket", backref="feedback")    
