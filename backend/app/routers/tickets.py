@@ -181,13 +181,21 @@ def get_user_context(user_id: str, db: Session = Depends(get_db)):
         "found"         : False
     }
 # ── POST /tickets/upload-screenshot ─────────────────────
-# Anjali's form calls this to upload a screenshot
-# Returns the URL of the uploaded image
+# Uploads image to Cloudinary — permanent storage
+# Returns permanent URL that never breaks on redeploy
 
 @router.post("/upload-screenshot")
-async def upload_screenshot(
-    file: UploadFile = File(...),
-):
+async def upload_screenshot(file: UploadFile = File(...)):
+    import cloudinary
+    import cloudinary.uploader
+
+    # Configure Cloudinary
+    cloudinary.config(
+        cloud_name = "dxykbg56j",
+        api_key    = "351331374515618",
+        api_secret = "JXD0X2Yy7qS1gLzSm81qJQ-xYFo"
+    )
+
     # Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
     if file.content_type not in allowed_types:
@@ -196,22 +204,20 @@ async def upload_screenshot(
             detail="Only image files are allowed (jpeg, png, gif, webp)"
         )
 
-    # Create uploads folder if it doesn't exist
-    upload_dir = "uploads"
-    os.makedirs(upload_dir, exist_ok=True)
+    # Read file contents
+    contents = await file.read()
 
-    # Save file with unique name
-    import uuid
-    file_extension = file.filename.split(".")[-1]
-    unique_filename = f"{uuid.uuid4()}.{file_extension}"
-    file_path = f"{upload_dir}/{unique_filename}"
+    # Upload to Cloudinary
+    import io
+    result = cloudinary.uploader.upload(
+        io.BytesIO(contents),
+        folder      = "bustler-pulse",
+        resource_type = "image"
+    )
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Return the URL
+    # Return permanent Cloudinary URL
     return {
-        "screenshot_url": f"/uploads/{unique_filename}",
-        "filename"      : unique_filename,
-        "message"       : "Screenshot uploaded successfully"
+        "screenshot_url": result["secure_url"],
+        "filename"      : result["public_id"],
+        "message"       : "Screenshot uploaded successfully to Cloudinary"
     }
