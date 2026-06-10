@@ -39,6 +39,7 @@ class Ticket(Base):
     is_anger_flagged  = Column(Integer, default=0)             # 1 = flagged
     assigned_agent_id = Column(Integer, ForeignKey("agents.id"), nullable=True)
     auto_reply_sent   = Column(Integer, default=0)             # 1 = auto reply was sent
+    screenshot_url    = Column(String, nullable=True)   # uploaded image path
     created_at        = Column(DateTime, default=datetime.utcnow)
     resolved_at       = Column(DateTime, nullable=True)
 

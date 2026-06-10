@@ -28,6 +28,7 @@ class TicketCreate(BaseModel):
     payment_status: Optional[str] = None
     category: str
     description: str
+    screenshot_url: Optional[str] = None
 
 class TicketResolve(BaseModel):
     resolution_notes: str
@@ -50,6 +51,7 @@ class TicketResponse(BaseModel):
     assigned_agent_id: Optional[int]
     created_at: datetime
     resolved_at: Optional[datetime]
+    screenshot_url: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -1,3 +1,6 @@
+import os
+import shutil
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -26,18 +29,19 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
     best_agent = suggest_agent(ticket_data.category, agents)
 
     ticket = Ticket(
-        user_id           = ticket_data.user_id,
-        project_id        = ticket_data.project_id,
-        payment_status    = ticket_data.payment_status,
-        category          = ticket_data.category,
-        description       = ticket_data.description,
-        status            = "open",
-        urgency           = triage_result["urgency"],
-        is_anger_flagged  = triage_result["is_anger_flagged"],
-        auto_reply_sent   = triage_result["auto_reply_sent"],
-        assigned_agent_id = best_agent.id if best_agent else None,
-        created_at        = datetime.utcnow()
-    )
+    user_id           = ticket_data.user_id,
+    project_id        = ticket_data.project_id,
+    payment_status    = ticket_data.payment_status,
+    category          = ticket_data.category,
+    description       = ticket_data.description,
+    status            = "open",
+    urgency           = triage_result["urgency"],
+    is_anger_flagged  = triage_result["is_anger_flagged"],
+    auto_reply_sent   = triage_result["auto_reply_sent"],
+    assigned_agent_id = best_agent.id if best_agent else None,
+    screenshot_url    = ticket_data.screenshot_url,
+    created_at        = datetime.utcnow()
+)
 
     db.add(ticket)
     db.commit()
@@ -175,4 +179,39 @@ def get_user_context(user_id: str, db: Session = Depends(get_db)):
         "payment_status": None,
         "last_category" : None,
         "found"         : False
+    }
+# ── POST /tickets/upload-screenshot ─────────────────────
+# Anjali's form calls this to upload a screenshot
+# Returns the URL of the uploaded image
+
+@router.post("/upload-screenshot")
+async def upload_screenshot(
+    file: UploadFile = File(...),
+):
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Only image files are allowed (jpeg, png, gif, webp)"
+        )
+
+    # Create uploads folder if it doesn't exist
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Save file with unique name
+    import uuid
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = f"{upload_dir}/{unique_filename}"
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Return the URL
+    return {
+        "screenshot_url": f"/uploads/{unique_filename}",
+        "filename"      : unique_filename,
+        "message"       : "Screenshot uploaded successfully"
     }
