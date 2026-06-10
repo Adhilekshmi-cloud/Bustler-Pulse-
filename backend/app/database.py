@@ -20,3 +20,20 @@ def get_db():
         yield db
     finally:
         db.close()
+# ── Auto-migrate new columns ─────────────────────────────
+from sqlalchemy import text
+
+def add_missing_columns():
+    with engine.connect() as conn:
+        try:
+            conn.execute(text(
+                "ALTER TABLE tickets ADD COLUMN IF NOT EXISTS screenshot_url VARCHAR"
+            ))
+            conn.execute(text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'product_team'"
+            ))
+            conn.commit()
+        except Exception as e:
+            print(f"Migration note: {e}")
+
+add_missing_columns()        
