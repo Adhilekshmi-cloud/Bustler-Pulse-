@@ -26,6 +26,7 @@ app.include_router(agents.router)
 app.include_router(health.router)
 app.include_router(disputes.router)
 app.include_router(auth.router)
+app.include_router(feedback.router)
 
 @app.get("/")
 def root():
