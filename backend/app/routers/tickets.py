@@ -1,7 +1,6 @@
 import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
@@ -29,19 +28,19 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
     best_agent = suggest_agent(ticket_data.category, agents)
 
     ticket = Ticket(
-    user_id           = ticket_data.user_id,
-    project_id        = ticket_data.project_id,
-    payment_status    = ticket_data.payment_status,
-    category          = ticket_data.category,
-    description       = ticket_data.description,
-    status            = "open",
-    urgency           = triage_result["urgency"],
-    is_anger_flagged  = triage_result["is_anger_flagged"],
-    auto_reply_sent   = triage_result["auto_reply_sent"],
-    assigned_agent_id = best_agent.id if best_agent else None,
-    screenshot_url    = ticket_data.screenshot_url,
-    created_at        = datetime.utcnow()
-)
+        user_id           = ticket_data.user_id,
+        project_id        = ticket_data.project_id,
+        payment_status    = ticket_data.payment_status,
+        category          = ticket_data.category,
+        description       = ticket_data.description,
+        status            = "open",
+        urgency           = triage_result["urgency"],
+        is_anger_flagged  = triage_result["is_anger_flagged"],
+        auto_reply_sent   = triage_result["auto_reply_sent"],
+        assigned_agent_id = best_agent.id if best_agent else None,
+        screenshot_url    = ticket_data.screenshot_url,
+        created_at        = datetime.utcnow()
+    )
 
     db.add(ticket)
     db.commit()
@@ -75,159 +74,13 @@ def get_tickets(
     return tickets
 
 
-# ── GET /tickets/{id} ────────────────────────────────────
-@router.get("/{ticket_id}", response_model=TicketResponse)
-def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-    return ticket
-
-
-# ── PATCH /tickets/{id}/resolve ──────────────────────────
-@router.patch("/{ticket_id}/resolve", response_model=TicketResponse)
-def resolve_ticket(
-    ticket_id       : int,
-    resolution_data : TicketResolve,
-    db              : Session = Depends(get_db)
-):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    if ticket.status == "resolved":
-        raise HTTPException(status_code=400, detail="Ticket already resolved")
-
-    # Step 1 — Mark resolved
-    ticket.status      = "resolved"
-    ticket.resolved_at = datetime.utcnow()
-    db.commit()
-
-    # Step 2 — Auto generate micro report
-    generate_report(
-        db               = db,
-        ticket           = ticket,
-        resolution_notes = resolution_data.resolution_notes,
-        what_broke       = resolution_data.what_broke,
-        why_it_happened  = resolution_data.why_it_happened,
-        how_fixed        = resolution_data.how_fixed,
-        csat_score       = resolution_data.csat_score
-    )
-
-    # Step 3 — Award badge
-    award_badge(db=db, ticket=ticket)
-
-    # Step 4 — Update agent stats
-    if ticket.assigned_agent_id:
-        agent = db.query(Agent).filter(
-            Agent.id == ticket.assigned_agent_id
-        ).first()
-        if agent:
-            agent.tickets_solved += 1
-            if resolution_data.csat_score:
-                agent.avg_csat = round(
-                    (agent.avg_csat * (agent.tickets_solved - 1) +
-                     resolution_data.csat_score) / agent.tickets_solved
-                )
-            db.commit()
-
-    # Step 5 — Refresh and return
-    db.refresh(ticket)
-    return ticket
-
-
-# ── GET /tickets/{id}/autoreply ──────────────────────────
-@router.get("/{ticket_id}/autoreply")
-def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    if ticket.auto_reply_sent:
-        return {
-            "auto_reply_sent": True,
-            "message": "Your issue has been identified. Please see the suggested resolution below.",
-        }
-    return {
-        "auto_reply_sent": False,
-        "message": "Your ticket has been received and assigned to an agent."
-    }
-
-
-# ── GET /context/{user_id} ───────────────────────────────
-# Anjali's ticket form calls this on load
-# Returns last known project + payment context for a user
-
-@router.get("/context/{user_id}")
-def get_user_context(user_id: str, db: Session = Depends(get_db)):
-    last_ticket = db.query(Ticket).filter(
-        Ticket.user_id == user_id
-    ).order_by(Ticket.created_at.desc()).first()
-
-    if last_ticket:
-        return {
-            "user_id"       : user_id,
-            "project_id"    : last_ticket.project_id,
-            "payment_status": last_ticket.payment_status,
-            "last_category" : last_ticket.category,
-            "found"         : True
-        }
-
-    return {
-        "user_id"       : user_id,
-        "project_id"    : None,
-        "payment_status": None,
-        "last_category" : None,
-        "found"         : False
-    }
-# ── POST /tickets/upload-screenshot ─────────────────────
-# Uploads image to Cloudinary — permanent storage
-# Returns permanent URL that never breaks on redeploy
-
-@router.post("/upload-screenshot")
-async def upload_screenshot(file: UploadFile = File(...)):
-    import cloudinary
-    import cloudinary.uploader
-
-    # Configure Cloudinary
-    cloudinary.config(
-        cloud_name = "dxykbg56j",
-        api_key    = "351331374515618",
-        api_secret = "JXD0X2Yy7qS1gLzSm81qJQ-xYFo"
-    )
-
-    # Validate file type
-    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail="Only image files are allowed (jpeg, png, gif, webp)"
-        )
-
-    # Read file contents
-    contents = await file.read()
-
-    # Upload to Cloudinary
-    import io
-    result = cloudinary.uploader.upload(
-        io.BytesIO(contents),
-        folder      = "bustler-pulse",
-        resource_type = "image"
-    )
-
-    # Return permanent Cloudinary URL
-    return {
-        "screenshot_url": result["secure_url"],
-        "filename"      : result["public_id"],
-        "message"       : "Screenshot uploaded successfully to Cloudinary"
-    }
 # ── GET /tickets/orders/{user_id} ───────────────────────
 # Returns mock order data for Anjali's order picker
 # Will be replaced with real Bustler API when available
+# IMPORTANT: must be defined BEFORE /{ticket_id} to avoid route conflict
 
 @router.get("/orders/{user_id}")
 def get_user_orders(user_id: str):
-    # Mock order data — realistic Bustler-style orders
     mock_orders = [
         {
             "order_id"        : "BST-2026-0042",
@@ -283,4 +136,143 @@ def get_user_orders(user_id: str):
         "user_id"      : user_id,
         "total_orders" : len(mock_orders),
         "orders"       : mock_orders
+    }
+
+
+# ── GET /context/{user_id} ───────────────────────────────
+# Anjali's ticket form calls this on load
+# Returns last known project + payment context for a user
+
+@router.get("/context/{user_id}")
+def get_user_context(user_id: str, db: Session = Depends(get_db)):
+    last_ticket = db.query(Ticket).filter(
+        Ticket.user_id == user_id
+    ).order_by(Ticket.created_at.desc()).first()
+
+    if last_ticket:
+        return {
+            "user_id"       : user_id,
+            "project_id"    : last_ticket.project_id,
+            "payment_status": last_ticket.payment_status,
+            "last_category" : last_ticket.category,
+            "found"         : True
+        }
+
+    return {
+        "user_id"       : user_id,
+        "project_id"    : None,
+        "payment_status": None,
+        "last_category" : None,
+        "found"         : False
+    }
+
+
+# ── POST /tickets/upload-screenshot ─────────────────────
+# Uploads image to Cloudinary — permanent storage
+
+@router.post("/upload-screenshot")
+async def upload_screenshot(file: UploadFile = File(...)):
+    import cloudinary
+    import cloudinary.uploader
+    import io
+
+    cloudinary.config(
+        cloud_name = "dxykbg56j",
+        api_key    = "351331374515618",
+        api_secret = "JXD0X2Yy7qS1gLzSm81qJQ-xYFo"
+    )
+
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Only image files are allowed (jpeg, png, gif, webp)"
+        )
+
+    contents = await file.read()
+
+    result = cloudinary.uploader.upload(
+        io.BytesIO(contents),
+        folder        = "bustler-pulse",
+        resource_type = "image"
+    )
+
+    return {
+        "screenshot_url": result["secure_url"],
+        "filename"      : result["public_id"],
+        "message"       : "Screenshot uploaded successfully to Cloudinary"
+    }
+
+
+# ── GET /tickets/{id} ────────────────────────────────────
+@router.get("/{ticket_id}", response_model=TicketResponse)
+def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    return ticket
+
+
+# ── PATCH /tickets/{id}/resolve ──────────────────────────
+@router.patch("/{ticket_id}/resolve", response_model=TicketResponse)
+def resolve_ticket(
+    ticket_id       : int,
+    resolution_data : TicketResolve,
+    db              : Session = Depends(get_db)
+):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    if ticket.status == "resolved":
+        raise HTTPException(status_code=400, detail="Ticket already resolved")
+
+    ticket.status      = "resolved"
+    ticket.resolved_at = datetime.utcnow()
+    db.commit()
+
+    generate_report(
+        db               = db,
+        ticket           = ticket,
+        resolution_notes = resolution_data.resolution_notes,
+        what_broke       = resolution_data.what_broke,
+        why_it_happened  = resolution_data.why_it_happened,
+        how_fixed        = resolution_data.how_fixed,
+        csat_score       = resolution_data.csat_score
+    )
+
+    award_badge(db=db, ticket=ticket)
+
+    if ticket.assigned_agent_id:
+        agent = db.query(Agent).filter(
+            Agent.id == ticket.assigned_agent_id
+        ).first()
+        if agent:
+            agent.tickets_solved += 1
+            if resolution_data.csat_score:
+                agent.avg_csat = round(
+                    (agent.avg_csat * (agent.tickets_solved - 1) +
+                     resolution_data.csat_score) / agent.tickets_solved
+                )
+            db.commit()
+
+    db.refresh(ticket)
+    return ticket
+
+
+# ── GET /tickets/{id}/autoreply ──────────────────────────
+@router.get("/{ticket_id}/autoreply")
+def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    if ticket.auto_reply_sent:
+        return {
+            "auto_reply_sent": True,
+            "message": "Your issue has been identified. Please see the suggested resolution below.",
+        }
+    return {
+        "auto_reply_sent": False,
+        "message": "Your ticket has been received and assigned to an agent."
     }
