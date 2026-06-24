@@ -221,3 +221,66 @@ async def upload_screenshot(file: UploadFile = File(...)):
         "filename"      : result["public_id"],
         "message"       : "Screenshot uploaded successfully to Cloudinary"
     }
+# ── GET /tickets/orders/{user_id} ───────────────────────
+# Returns mock order data for Anjali's order picker
+# Will be replaced with real Bustler API when available
+
+@router.get("/orders/{user_id}")
+def get_user_orders(user_id: str):
+    # Mock order data — realistic Bustler-style orders
+    mock_orders = [
+        {
+            "order_id"        : "BST-2026-0042",
+            "project_name"    : "Logo Design for Cafe Mocha",
+            "freelancer_name" : "Rahul Menon",
+            "amount"          : 2500,
+            "status"          : "completed",
+            "date"            : "2026-06-15"
+        },
+        {
+            "order_id"        : "BST-2026-0089",
+            "project_name"    : "Wedding Photography",
+            "freelancer_name" : "Priya Nair",
+            "amount"          : 15000,
+            "status"          : "in_progress",
+            "date"            : "2026-06-18"
+        },
+        {
+            "order_id"        : "BST-2026-0103",
+            "project_name"    : "Website Development",
+            "freelancer_name" : "Arjun Krishna",
+            "amount"          : 8500,
+            "status"          : "completed",
+            "date"            : "2026-06-10"
+        },
+        {
+            "order_id"        : "BST-2026-0124",
+            "project_name"    : "Birthday Cake Order",
+            "freelancer_name" : "Lakshmi Bakery",
+            "amount"          : 1200,
+            "status"          : "delivered",
+            "date"            : "2026-06-20"
+        },
+        {
+            "order_id"        : "BST-2026-0156",
+            "project_name"    : "Resume Writing Service",
+            "freelancer_name" : "Sneha Pillai",
+            "amount"          : 800,
+            "status"          : "pending",
+            "date"            : "2026-06-22"
+        },
+        {
+            "order_id"        : "BST-2026-0178",
+            "project_name"    : "Home Cleaning Service",
+            "freelancer_name" : "Clean Pro Services",
+            "amount"          : 1500,
+            "status"          : "completed",
+            "date"            : "2026-06-08"
+        }
+    ]
+
+    return {
+        "user_id"      : user_id,
+        "total_orders" : len(mock_orders),
+        "orders"       : mock_orders
+    }
