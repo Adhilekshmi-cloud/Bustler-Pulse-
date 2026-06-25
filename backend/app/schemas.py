@@ -29,6 +29,9 @@ class TicketCreate(BaseModel):
     category: str
     description: str
     screenshot_url: Optional[str] = None
+    order_id: Optional[str] = None              # ← add
+    order_amount: Optional[int] = None          # ← add
+    freelancer_name: Optional[str] = None       # ← add
 
 class TicketResolve(BaseModel):
     resolution_notes: str
@@ -52,6 +55,9 @@ class TicketResponse(BaseModel):
     created_at: datetime
     resolved_at: Optional[datetime]
     screenshot_url: Optional[str] = None
+    order_id: Optional[str] = None              # ← add
+    order_amount: Optional[int] = None          # ← add
+    freelancer_name: Optional[str] = None       # ← add
 
     class Config:
         from_attributes = True

@@ -39,6 +39,9 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
         auto_reply_sent   = triage_result["auto_reply_sent"],
         assigned_agent_id = best_agent.id if best_agent else None,
         screenshot_url    = ticket_data.screenshot_url,
+        order_id          = ticket_data.order_id,           # ← add this
+        order_amount      = ticket_data.order_amount,       # ← add this
+        freelancer_name   = ticket_data.freelancer_name,    # ← add this
         created_at        = datetime.utcnow()
     )
 
