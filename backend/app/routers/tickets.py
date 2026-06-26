@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models import Ticket, Agent
 from app.schemas import TicketCreate, TicketResolve, TicketResponse
-from app.services.triage import triage_ticket, suggest_agent
+from app.services.triage import triage_ticket, ai_triage_ticket, suggest_agent
 from app.services.report_generator import generate_report
 from app.services.badge import award_badge
 
@@ -68,7 +68,7 @@ class EscalateRequest(BaseModel):
 @router.post("/", response_model=TicketResponse)
 def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
 
-    triage_result = triage_ticket(
+    triage_result = ai_triage_ticket(
         category    = ticket_data.category,
         description = ticket_data.description
     )
@@ -91,6 +91,7 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
         order_id          = ticket_data.order_id,
         order_amount      = ticket_data.order_amount,
         freelancer_name   = ticket_data.freelancer_name,
+        route_to          = triage_result.get("route_to"),
         created_at        = datetime.utcnow()
     )
 
@@ -335,6 +336,39 @@ def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
 # Updates status to in_progress, category to Dispute
 # Routes to Anjali P Remesh as escalation handler
 # Sends an email notification on successful escalation
+# ── POST /tickets/{id}/triage ────────────────────────────
+# Manually re-run AI triage on an existing ticket
+# Saves the new urgency, anger flag, route_to, and auto-reply onto the ticket
+
+@router.post("/{ticket_id}/triage")
+def triage_existing_ticket(ticket_id: int, db: Session = Depends(get_db)):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    triage_result = ai_triage_ticket(
+        category    = ticket.category,
+        description = ticket.description
+    )
+
+    ticket.urgency          = triage_result["urgency"]
+    ticket.is_anger_flagged = triage_result["is_anger_flagged"]
+    ticket.auto_reply_sent  = triage_result["auto_reply_sent"]
+    ticket.route_to         = triage_result.get("route_to")
+
+    db.commit()
+    db.refresh(ticket)
+
+    return {
+        "id"               : ticket.id,
+        "category"         : ticket.category,
+        "urgency"          : ticket.urgency,
+        "is_anger_flagged" : ticket.is_anger_flagged,
+        "auto_reply"       : triage_result.get("auto_reply"),
+        "auto_reply_sent"  : ticket.auto_reply_sent,
+        "route_to"         : ticket.route_to,
+        "message"          : "✅ Ticket re-triaged successfully"
+    }
 
 @router.patch("/{ticket_id}/escalate")
 def escalate_ticket(
