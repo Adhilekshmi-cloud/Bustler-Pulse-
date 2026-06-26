@@ -16,7 +16,7 @@ from app.services.badge import award_badge
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 
-def send_escalation_email(ticket_id: int, reason: str, category: str, user_id: str):
+def send_escalation_email(ticket_id: int, reason: str, category: str, user_id: str, screenshot_url: Optional[str] = None):
     """Sends an email notification when a ticket is escalated.
     Wrapped in try/except so email failures never break the escalate endpoint."""
     try:
@@ -42,6 +42,7 @@ def send_escalation_email(ticket_id: int, reason: str, category: str, user_id: s
           <li><b>Escalated to:</b> Anjali P Remesh</li>
         </ul>
         <p><a href="https://bustler-pulse-six.vercel.app">View it here</a></p>
+        {f'<p><img src="{screenshot_url}" alt="Screenshot" style="max-width:400px;"></p>' if screenshot_url else ''}
         <p>— Bustler Pulse Automated System</p>
         """
 
@@ -360,10 +361,11 @@ def escalate_ticket(
 
     # Send escalation email — only fires on successful update, never breaks the endpoint
     send_escalation_email(
-        ticket_id = ticket.id,
-        reason    = escalate_data.reason,
-        category  = ticket.category,
-        user_id   = ticket.user_id
+        ticket_id      = ticket.id,
+        reason         = escalate_data.reason,
+        category       = ticket.category,
+        user_id        = ticket.user_id,
+        screenshot_url = ticket.screenshot_url
     )
 
     # Build response
