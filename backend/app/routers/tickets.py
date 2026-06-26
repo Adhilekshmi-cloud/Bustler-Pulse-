@@ -1,7 +1,5 @@
 import os
 import shutil
-import smtplib
-from email.mime.text import MIMEText
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -18,42 +16,41 @@ from app.services.badge import award_badge
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 
-# ── Helper: Send escalation email ───────────────────────
 def send_escalation_email(ticket_id: int, reason: str, category: str, user_id: str):
     """Sends an email notification when a ticket is escalated.
     Wrapped in try/except so email failures never break the escalate endpoint."""
     try:
-        gmail_address  = os.environ.get("GMAIL_ADDRESS")
-        gmail_password = os.environ.get("GMAIL_APP_PASSWORD")
+        import resend
 
-        if not gmail_address or not gmail_password:
-            print("⚠️ Email skipped — GMAIL credentials not configured")
+        resend_api_key = os.environ.get("RESEND_API_KEY")
+        gmail_address   = os.environ.get("GMAIL_ADDRESS")
+
+        if not resend_api_key or not gmail_address:
+            print("⚠️ Email skipped — RESEND_API_KEY or GMAIL_ADDRESS not configured")
             return
 
-        subject = f"🚨 Ticket #{ticket_id} Escalated — Bustler Pulse"
-        body = f"""
-A ticket has been escalated and needs attention.
+        resend.api_key = resend_api_key
 
-Ticket ID     : {ticket_id}
-User ID       : {user_id}
-Category      : {category}
-Reason        : {reason}
-Escalated to  : Anjali P Remesh
+        body_html = f"""
+        <h2>🚨 Ticket #{ticket_id} Escalated — Bustler Pulse</h2>
+        <p>A ticket has been escalated and needs attention.</p>
+        <ul>
+          <li><b>Ticket ID:</b> {ticket_id}</li>
+          <li><b>User ID:</b> {user_id}</li>
+          <li><b>Category:</b> {category}</li>
+          <li><b>Reason:</b> {reason}</li>
+          <li><b>Escalated to:</b> Anjali P Remesh</li>
+        </ul>
+        <p><a href="https://bustler-pulse.onrender.com/docs#/Tickets">View it here</a></p>
+        <p>— Bustler Pulse Automated System</p>
+        """
 
-View it here: https://bustler-pulse.onrender.com/docs#/Tickets
-
-— Bustler Pulse Automated System
-"""
-
-        msg = MIMEText(body)
-        msg["Subject"] = subject
-        msg["From"]    = gmail_address
-        msg["To"]      = gmail_address
-
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(gmail_address, gmail_password)
-            server.send_message(msg)
+        resend.Emails.send({
+            "from"    : "Bustler Pulse <onboarding@resend.dev>",
+            "to"      : [gmail_address],
+            "subject" : f"🚨 Ticket #{ticket_id} Escalated — Bustler Pulse",
+            "html"    : body_html
+        })
 
         print(f"✅ Escalation email sent for ticket #{ticket_id}")
 
