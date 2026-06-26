@@ -41,7 +41,7 @@ def send_escalation_email(ticket_id: int, reason: str, category: str, user_id: s
           <li><b>Reason:</b> {reason}</li>
           <li><b>Escalated to:</b> Anjali P Remesh</li>
         </ul>
-        <p><a href="https://bustler-pulse.onrender.com/docs#/Tickets">View it here</a></p>
+        <p><a href="https://bustler-pulse-six.vercel.app">View it here</a></p>
         <p>— Bustler Pulse Automated System</p>
         """
 
