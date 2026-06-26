@@ -13,6 +13,7 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS order_id VARCHAR;"))
         conn.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS order_amount INTEGER;"))
         conn.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS freelancer_name VARCHAR;"))
+        conn.execute(text("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS route_to VARCHAR;"))
         conn.commit()
         print("✅ Columns added/verified successfully")
     except Exception as e:

@@ -43,6 +43,7 @@ class Ticket(Base):
     order_id          = Column(String, nullable=True)   # ← add
     order_amount      = Column(Integer, nullable=True)  # ← add
     freelancer_name   = Column(String, nullable=True)   # ← add
+    route_to          = Column(String, nullable=True)   # ← add (AI triage routing)
     created_at        = Column(DateTime, default=datetime.utcnow)
     resolved_at       = Column(DateTime, nullable=True)
 

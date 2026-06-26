@@ -1,3 +1,6 @@
+import os
+import json
+
 # ── Triage Engine ───────────────────────────────────────
 # Reads every ticket and automatically:
 # 1. Scores urgency (low / medium / critical)
@@ -107,3 +110,70 @@ def suggest_agent(category: str, agents: list) -> object:
 
     # No specialty match — pick highest CSAT overall
     return max(agents, key=lambda a: a.avg_csat)
+
+
+# ── AI-Powered Triage (Claude) ──────────────────────────
+# Calls Claude server-side to classify a ticket.
+# Falls back to keyword-based triage_ticket() if the API
+# call fails for any reason — a ticket should never end up
+# completely untriaged.
+
+VALID_ROUTES = [
+    "payment_team", "delivery_team", "quality_team",
+    "refund_team", "no_response_team", "ops_agent", "dispute_team"
+]
+
+def ai_triage_ticket(category: str, description: str) -> dict:
+    try:
+        import anthropic
+
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            print("⚠️ AI triage skipped — ANTHROPIC_API_KEY not configured, using keyword fallback")
+            return triage_ticket(category, description)
+
+        client = anthropic.Anthropic(api_key=api_key)
+
+        prompt = f"""You are a support ticket triage system for a freelance marketplace called Bustler.
+
+Classify this ticket and respond with ONLY a JSON object, no other text, no markdown formatting.
+
+Ticket category: {category}
+Ticket description: {description}
+
+Return JSON with exactly these fields:
+- "urgency": one of "low", "medium", "critical"
+- "anger_detected": true or false (true if the user sounds frustrated, angry, or threatening)
+- "route_to": one of {VALID_ROUTES}
+- "auto_reply": a short, empathetic 2-3 sentence reply to send the user, or null if no good auto-reply applies
+- "auto_reply_sent": true if you provided an auto_reply, false otherwise
+
+Respond with ONLY the JSON object."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        raw_text = response.content[0].text.strip()
+        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+        result = json.loads(raw_text)
+
+        route_to = result.get("route_to")
+        if route_to not in VALID_ROUTES:
+            route_to = None
+
+        return {
+            "urgency": result.get("urgency", "low"),
+            "is_anger_flagged": 1 if result.get("anger_detected") else 0,
+            "route_to": route_to,
+            "auto_reply": result.get("auto_reply"),
+            "auto_reply_sent": 1 if result.get("auto_reply_sent") else 0
+        }
+
+    except Exception as e:
+        print(f"⚠️ AI triage failed, falling back to keyword triage: {e}")
+        fallback = triage_ticket(category, description)
+        fallback["route_to"] = None
+        return fallback
