@@ -112,11 +112,14 @@ def suggest_agent(category: str, agents: list) -> object:
     return max(agents, key=lambda a: a.avg_csat)
 
 
-# ── AI-Powered Triage (Claude) ──────────────────────────
-# Calls Claude server-side to classify a ticket.
-# Falls back to keyword-based triage_ticket() if the API
-# call fails for any reason — a ticket should never end up
-# completely untriaged.
+
+
+
+# ── AI-Powered Triage (Gemini) ──────────────────────────
+# Calls Gemini server-side to classify a ticket — free tier,
+# no billing required. Falls back to keyword-based
+# triage_ticket() if the API call fails for any reason —
+# a ticket should never end up completely untriaged.
 
 VALID_ROUTES = [
     "payment_team", "delivery_team", "quality_team",
@@ -125,50 +128,59 @@ VALID_ROUTES = [
 
 def ai_triage_ticket(category: str, description: str) -> dict:
     try:
-        import anthropic
+        from google import genai
 
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
-            print("⚠️ AI triage skipped — ANTHROPIC_API_KEY not configured, using keyword fallback")
+            print("⚠️ AI triage skipped — GEMINI_API_KEY not configured, using keyword fallback")
             return triage_ticket(category, description)
 
-        client = anthropic.Anthropic(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         prompt = f"""You are a support ticket triage system for a freelance marketplace called Bustler.
-
-Classify this ticket and respond with ONLY a JSON object, no other text, no markdown formatting.
 
 Ticket category: {category}
 Ticket description: {description}
 
-Return JSON with exactly these fields:
-- "urgency": one of "low", "medium", "critical"
-- "anger_detected": true or false (true if the user sounds frustrated, angry, or threatening)
-- "route_to": one of {VALID_ROUTES}
-- "auto_reply": a short, empathetic 2-3 sentence reply to send the user, or null if no good auto-reply applies
-- "auto_reply_sent": true if you provided an auto_reply, false otherwise
+Classify this ticket."""
 
-Respond with ONLY the JSON object."""
+        response_schema = {
+            "type": "OBJECT",
+            "properties": {
+                "urgency": {
+                    "type": "STRING",
+                    "enum": ["low", "medium", "critical"]
+                },
+                "anger_detected": {"type": "BOOLEAN"},
+                "route_to": {
+                    "type": "STRING",
+                    "enum": VALID_ROUTES
+                },
+                "auto_reply": {
+                    "type": "STRING",
+                    "description": "A short, empathetic 2-3 sentence reply to send the user. Empty string if no good auto-reply applies."
+                },
+                "auto_reply_sent": {"type": "BOOLEAN"}
+            },
+            "required": ["urgency", "anger_detected", "route_to", "auto_reply", "auto_reply_sent"]
+        }
 
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=300,
-            messages=[{"role": "user", "content": prompt}]
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": response_schema
+            }
         )
 
-        raw_text = response.content[0].text.strip()
-        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-        result = json.loads(raw_text)
-
-        route_to = result.get("route_to")
-        if route_to not in VALID_ROUTES:
-            route_to = None
+        result = json.loads(response.text)
 
         return {
             "urgency": result.get("urgency", "low"),
             "is_anger_flagged": 1 if result.get("anger_detected") else 0,
-            "route_to": route_to,
-            "auto_reply": result.get("auto_reply"),
+            "route_to": result.get("route_to"),
+            "auto_reply": result.get("auto_reply") or None,
             "auto_reply_sent": 1 if result.get("auto_reply_sent") else 0
         }
 
