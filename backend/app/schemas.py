@@ -58,6 +58,7 @@ class TicketResponse(BaseModel):
     order_id: Optional[str] = None              # ← add
     order_amount: Optional[int] = None          # ← add
     freelancer_name: Optional[str] = None       # ← add
+    route_to: Optional[str] = None              # ← add
 
     class Config:
         from_attributes = True
