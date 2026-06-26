@@ -1,9 +1,12 @@
 import os
 import shutil
+import smtplib
+from email.mime.text import MIMEText
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models import Ticket, Agent
@@ -13,6 +16,54 @@ from app.services.report_generator import generate_report
 from app.services.badge import award_badge
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
+
+
+# ── Helper: Send escalation email ───────────────────────
+def send_escalation_email(ticket_id: int, reason: str, category: str, user_id: str):
+    """Sends an email notification when a ticket is escalated.
+    Wrapped in try/except so email failures never break the escalate endpoint."""
+    try:
+        gmail_address  = os.environ.get("GMAIL_ADDRESS")
+        gmail_password = os.environ.get("GMAIL_APP_PASSWORD")
+
+        if not gmail_address or not gmail_password:
+            print("⚠️ Email skipped — GMAIL credentials not configured")
+            return
+
+        subject = f"🚨 Ticket #{ticket_id} Escalated — Bustler Pulse"
+        body = f"""
+A ticket has been escalated and needs attention.
+
+Ticket ID     : {ticket_id}
+User ID       : {user_id}
+Category      : {category}
+Reason        : {reason}
+Escalated to  : Anjali P Remesh
+
+View it here: https://bustler-pulse.onrender.com/docs#/Tickets
+
+— Bustler Pulse Automated System
+"""
+
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"]    = gmail_address
+        msg["To"]      = gmail_address
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(gmail_address, gmail_password)
+            server.send_message(msg)
+
+        print(f"✅ Escalation email sent for ticket #{ticket_id}")
+
+    except Exception as e:
+        print(f"⚠️ Email sending failed (escalate still succeeded): {e}")
+
+
+# ── EscalateRequest schema ──────────────────────────────
+class EscalateRequest(BaseModel):
+    reason: str
 
 
 # ── POST /tickets ────────────────────────────────────────
@@ -39,9 +90,9 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
         auto_reply_sent   = triage_result["auto_reply_sent"],
         assigned_agent_id = best_agent.id if best_agent else None,
         screenshot_url    = ticket_data.screenshot_url,
-        order_id          = ticket_data.order_id,           # ← add this
-        order_amount      = ticket_data.order_amount,       # ← add this
-        freelancer_name   = ticket_data.freelancer_name,    # ← add this
+        order_id          = ticket_data.order_id,
+        order_amount      = ticket_data.order_amount,
+        freelancer_name   = ticket_data.freelancer_name,
         created_at        = datetime.utcnow()
     )
 
@@ -279,15 +330,13 @@ def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
         "auto_reply_sent": False,
         "message": "Your ticket has been received and assigned to an agent."
     }
+
+
 # ── PATCH /tickets/{id}/escalate ─────────────────────────
 # Ambadi's ops dashboard calls this to escalate a ticket
 # Updates status to in_progress, category to Dispute
 # Routes to Anjali P Remesh as escalation handler
-
-from pydantic import BaseModel
-
-class EscalateRequest(BaseModel):
-    reason: str
+# Sends an email notification on successful escalation
 
 @router.patch("/{ticket_id}/escalate")
 def escalate_ticket(
@@ -311,6 +360,14 @@ def escalate_ticket(
 
     db.commit()
     db.refresh(ticket)
+
+    # Send escalation email — only fires on successful update, never breaks the endpoint
+    send_escalation_email(
+        ticket_id = ticket.id,
+        reason    = escalate_data.reason,
+        category  = ticket.category,
+        user_id   = ticket.user_id
+    )
 
     # Build response
     return {
