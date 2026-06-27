@@ -52,8 +52,33 @@ KNOWN_ISSUES = {
             "freelancer's account and an ops agent will follow up "
             "within 24 hours to help resolve this."
         )
+    },
+    "delivery": {
+        "keywords": [""],
+        "reply": (
+            "Hi! We've received your delivery issue and it's been "
+            "logged with our team. An agent will review the details "
+            "and get back to you shortly."
+        )
+    },
+    "quality": {
+        "keywords": [""],
+        "reply": (
+            "Hi! Thanks for letting us know about the quality concern. "
+            "Your ticket has been received and an agent will look into "
+            "it and follow up with you soon."
+        )
+    },
+    "other": {
+        "keywords": [""],
+        "reply": (
+            "Hi! We've received your issue and it's been logged. "
+            "Our team is looking into it and will follow up with you "
+            "shortly."
+        )
     }
 }
+
 
 # ── Main Triage Function ────────────────────────────────
 def triage_ticket(category: str, description: str) -> dict:
