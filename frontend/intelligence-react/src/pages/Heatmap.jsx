@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 import { getHeatmap, getReportsSummary } from '../api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -23,7 +23,7 @@ const getHeatColor = (count, max) => {
 };
 
 const Heatmap = () => {
-  const navigate = useNavigate();
+  const { isOpen } = useSidebar();
   const [heatmapData, setHeatmapData] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,6 @@ const Heatmap = () => {
     load();
   }, []);
 
-  // Process data
   const categories = [...new Set(heatmapData.map(d => d.category))];
   const weeks = [...new Set(heatmapData.map(d => d.week))].sort((a, b) => a - b);
   const lookup = {};
@@ -69,30 +68,12 @@ const Heatmap = () => {
     color: COLORS[cat] || '#8b5cf6'
   }));
 
-  const navItems = [
-    { label: '🧠 Home', path: '/intelligence' },
-    { label: '🟢 Health', path: '/health' },
-    { label: '📋 Reports', path: '/reports' },
-    { label: '🔥 Heatmap', path: '/heatmap', active: true }
-  ];
-
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Header showLogout={true} />
+      <Sidebar />
 
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px' }}>
-
-        {/* Nav */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
-          {navItems.map(n => (
-            <button key={n.path} onClick={() => navigate(n.path)} style={{
-              padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 600,
-              border: `2px solid ${n.active ? '#E8232A' : '#e5e7eb'}`,
-              background: n.active ? '#E8232A' : 'white',
-              color: n.active ? 'white' : '#888', cursor: 'pointer'
-            }}>{n.label}</button>
-          ))}
-        </div>
+      <div style={{ marginLeft: isOpen ? '240px' : '0px', transition: 'margin-left 0.2s ease', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '1000px', padding: '40px 20px' }}>
 
         <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '6px' }}>Issue Heatmap</h1>
         <p style={{ color: '#666', marginBottom: '36px' }}>Which issues spike at which time — helping the product team predict and prevent problems</p>
@@ -102,7 +83,6 @@ const Heatmap = () => {
 
         {!loading && !error && (
           <>
-            {/* Insight Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
               {[
                 { icon: '🔥', title: 'Hottest Category', value: hottestCat ? hottestCat[0].replace('_', ' ') : 'N/A', desc: 'Most reported issue type' },
@@ -121,7 +101,6 @@ const Heatmap = () => {
               ))}
             </div>
 
-            {/* Bar Chart */}
             {barData.length > 0 && (
               <div style={{
                 background: 'white', border: '1px solid #e5e7eb', borderRadius: '14px',
@@ -144,7 +123,6 @@ const Heatmap = () => {
               </div>
             )}
 
-            {/* Heatmap Grid */}
             {heatmapData.length === 0 ? (
               <div style={{
                 textAlign: 'center', padding: '40px', color: '#999',
@@ -160,14 +138,12 @@ const Heatmap = () => {
                 <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>🔥 Category × Week Heatmap</div>
                 <div style={{ fontSize: '13px', color: '#888', marginBottom: '24px' }}>Darker = more issues. Hover to see count.</div>
 
-                {/* Week Headers */}
                 <div style={{ display: 'flex', gap: '6px', paddingLeft: '118px', marginBottom: '6px' }}>
                   {weeks.map(w => (
                     <div key={w} style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: '#aaa', fontWeight: 600 }}>W{w}</div>
                   ))}
                 </div>
 
-                {/* Rows */}
                 {categories.map(cat => (
                   <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <div style={{ width: '110px', fontSize: '13px', color: '#666', textAlign: 'right', fontWeight: 500, textTransform: 'capitalize' }}>
@@ -196,6 +172,7 @@ const Heatmap = () => {
             )}
           </>
         )}
+      </div>
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 import { getReportsSummary, getReportsPatterns, getDetailedReports } from '../api';
 
 const Reports = () => {
-  const navigate = useNavigate();
+  const { isOpen } = useSidebar();
   const [tab, setTab] = useState('patterns');
   const [summary, setSummary] = useState(null);
   const [patterns, setPatterns] = useState([]);
@@ -39,30 +39,12 @@ const Reports = () => {
     return { background: '#dcfce7', color: '#16a34a', border: '1px solid #22c55e' };
   };
 
-  const navItems = [
-    { label: '🧠 Home', path: '/intelligence' },
-    { label: '🟢 Health', path: '/health' },
-    { label: '📋 Reports', path: '/reports', active: true },
-    { label: '🔥 Heatmap', path: '/heatmap' }
-  ];
-
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Header showLogout={true} />
+      <Sidebar />
 
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px' }}>
-
-        {/* Nav */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
-          {navItems.map(n => (
-            <button key={n.path} onClick={() => navigate(n.path)} style={{
-              padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 600,
-              border: `2px solid ${n.active ? '#E8232A' : '#e5e7eb'}`,
-              background: n.active ? '#E8232A' : 'white',
-              color: n.active ? 'white' : '#888', cursor: 'pointer'
-            }}>{n.label}</button>
-          ))}
-        </div>
+      <div style={{ marginLeft: isOpen ? '240px' : '0px', transition: 'margin-left 0.2s ease', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '1000px', padding: '40px 20px' }}>
 
         <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '6px' }}>Product Feedback Reports</h1>
         <p style={{ color: '#666', marginBottom: '36px' }}>Patterns from resolved tickets — helping the product team fix root causes</p>
@@ -72,7 +54,6 @@ const Reports = () => {
 
         {summary && (
           <>
-            {/* Summary Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '36px' }}>
               {[
                 { label: 'Total Tickets', value: summary.total_tickets, color: '#00A99D' },
@@ -90,7 +71,6 @@ const Reports = () => {
               ))}
             </div>
 
-            {/* Tabs + Download */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[
@@ -113,7 +93,6 @@ const Reports = () => {
               </button>
             </div>
 
-            {/* Patterns Tab */}
             {tab === 'patterns' && (
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Most Common Issues — Ranked by Frequency</h2>
@@ -148,7 +127,6 @@ const Reports = () => {
               </div>
             )}
 
-            {/* Reports Tab */}
             {tab === 'reports' && (
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>All Micro-Reports</h2>
@@ -203,6 +181,7 @@ const Reports = () => {
             )}
           </>
         )}
+      </div>
       </div>
     </div>
   );

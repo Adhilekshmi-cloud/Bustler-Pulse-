@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import { useSidebar } from '../context/SidebarContext';
 import { getHealth, getHealthDetailed } from '../api';
 
 const Health = () => {
-  const navigate = useNavigate();
+  const { isOpen } = useSidebar();
   const [health, setHealth] = useState(null);
   const [detailed, setDetailed] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,26 +53,10 @@ const Health = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Header showLogout={true} />
+      <Sidebar />
 
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 20px' }}>
-
-        {/* Nav */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '32px' }}>
-          {[
-            { label: '🧠 Home', path: '/intelligence' },
-            { label: '🟢 Health', path: '/health', active: true },
-            { label: '📋 Reports', path: '/reports' },
-            { label: '🔥 Heatmap', path: '/heatmap' }
-          ].map(n => (
-            <button key={n.path} onClick={() => navigate(n.path)} style={{
-              padding: '8px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: 600,
-              border: `2px solid ${n.active ? '#E8232A' : '#e5e7eb'}`,
-              background: n.active ? '#E8232A' : 'white',
-              color: n.active ? 'white' : '#888', cursor: 'pointer'
-            }}>{n.label}</button>
-          ))}
-        </div>
+      <div style={{ marginLeft: isOpen ? '240px' : '0px', transition: 'margin-left 0.2s ease', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '960px', padding: '40px 20px' }}>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800 }}>System Health</h1>
@@ -85,7 +69,6 @@ const Health = () => {
 
         {health && (
           <>
-            {/* Status Card */}
             <div style={{
               ...getStatusStyle(), borderRadius: '16px', padding: '28px 32px',
               marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '20px'
@@ -97,7 +80,6 @@ const Health = () => {
               </div>
             </div>
 
-            {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
               {[
                 { label: 'Open Tickets', value: health.open_tickets, color: '#00A99D' },
@@ -114,7 +96,6 @@ const Health = () => {
               ))}
             </div>
 
-            {/* Category Breakdown */}
             {detailed && (
               <>
                 <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Category Breakdown</h2>
@@ -152,6 +133,7 @@ const Health = () => {
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );
