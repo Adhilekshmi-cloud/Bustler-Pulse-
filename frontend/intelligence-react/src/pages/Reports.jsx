@@ -90,19 +90,27 @@ const Reports = () => {
               ))}
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              {[
-                { key: 'patterns', label: '📊 Issue Patterns' },
-                { key: 'reports', label: '📋 All Reports' }
-              ].map(t => (
-                <button key={t.key} onClick={() => setTab(t.key)} style={{
-                  padding: '10px 22px', borderRadius: '10px', fontSize: '14px', fontWeight: 600,
-                  border: `2px solid ${tab === t.key ? '#E8232A' : '#e5e7eb'}`,
-                  background: tab === t.key ? '#E8232A' : 'white',
-                  color: tab === t.key ? 'white' : '#888', cursor: 'pointer'
-                }}>{t.label}</button>
-              ))}
+            {/* Tabs + Download */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { key: 'patterns', label: '📊 Issue Patterns' },
+                  { key: 'reports', label: '📋 All Reports' }
+                ].map(t => (
+                  <button key={t.key} onClick={() => setTab(t.key)} style={{
+                    padding: '10px 22px', borderRadius: '10px', fontSize: '14px', fontWeight: 600,
+                    border: `2px solid ${tab === t.key ? '#E8232A' : '#e5e7eb'}`,
+                    background: tab === t.key ? '#E8232A' : 'white',
+                    color: tab === t.key ? 'white' : '#888', cursor: 'pointer'
+                  }}>{t.label}</button>
+                ))}
+              </div>
+              <button onClick={() => window.open('https://bustler-pulse.onrender.com/reports/export-pdf', '_blank')} style={{
+                padding: '10px 22px', borderRadius: '10px', fontSize: '14px', fontWeight: 600,
+                border: '2px solid #E8232A', background: 'white', color: '#E8232A', cursor: 'pointer'
+              }}>
+                ⬇️ Download PDF
+              </button>
             </div>
 
             {/* Patterns Tab */}

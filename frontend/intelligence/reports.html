@@ -87,10 +87,16 @@
       </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab active" onclick="showTab('patterns')">📊 Issue Patterns</button>
-      <button class="tab" onclick="showTab('reports')">📋 All Reports</button>
-    </div>
+    <div class="tabs" style="justify-content: space-between; display: flex;">
+  <div style="display: flex; gap: 8px;">
+    <button class="tab active" onclick="showTab('patterns')">📊 Issue Patterns</button>
+    <button class="tab" onclick="showTab('reports')">📋 All Reports</button>
+  </div>
+  <button class="tab" style="background:white; color:#E8232A; border-color:#E8232A;"
+    onclick="window.open(API + '/reports/export-pdf', '_blank')">
+    ⬇️ Download PDF
+  </button>
+</div>
 
     <div id="tab-patterns">
       <div class="section-title">Most Common Issues — Ranked by Frequency</div>
