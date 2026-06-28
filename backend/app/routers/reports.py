@@ -8,6 +8,11 @@ from app.models import Report, Ticket
 from app.schemas import ReportResponse
 from app.services.report_generator import analyse_patterns, get_heatmap_data
 
+from fastapi.responses import FileResponse
+from app.services.pdf_export import build_analytics_pdf
+import os
+import tempfile
+
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
 
@@ -35,6 +40,47 @@ def get_heatmap(db: Session = Depends(get_db)):
         "heatmap"      : heatmap_data
     }
 
+@router.get("/export-pdf")
+def export_pdf(db: Session = Depends(get_db)):
+    patterns = analyse_patterns(db)
+    heatmap_data = get_heatmap_data(db)
+
+    today = date.today()
+    total_tickets    = db.query(Ticket).count()
+    open_tickets     = db.query(Ticket).filter(Ticket.status == "open").count()
+    resolved_tickets = db.query(Ticket).filter(Ticket.status == "resolved").count()
+    critical_tickets = db.query(Ticket).filter(Ticket.urgency == "critical").count()
+    anger_flagged    = db.query(Ticket).filter(Ticket.is_anger_flagged == 1).count()
+    resolved_today   = db.query(Ticket).filter(
+        Ticket.status == "resolved",
+        Ticket.resolved_at >= datetime.combine(today, datetime.min.time())
+    ).count()
+    total_reports = db.query(Report).count()
+
+    avg_csat = None
+    csat_scores = db.query(Report.csat_score).filter(Report.csat_score != None).all()
+    if csat_scores:
+        avg_csat = round(sum(s[0] for s in csat_scores) / len(csat_scores), 1)
+
+    summary = {
+        "total_tickets"   : total_tickets,
+        "open_tickets"    : open_tickets,
+        "resolved_tickets": resolved_tickets,
+        "critical_tickets": critical_tickets,
+        "anger_flagged"   : anger_flagged,
+        "resolved_today"  : resolved_today,
+        "total_reports"   : total_reports,
+        "avg_csat"        : avg_csat
+    }
+
+    output_path = os.path.join(tempfile.gettempdir(), "bustler_pulse_report.pdf")
+    build_analytics_pdf(output_path, summary, patterns, heatmap_data)
+
+    return FileResponse(
+        path      = output_path,
+        filename  = "bustler_pulse_report.pdf",
+        media_type= "application/pdf"
+    )
 
 @router.get("/summary")
 def get_summary(db: Session = Depends(get_db)):
