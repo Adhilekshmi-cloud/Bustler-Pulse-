@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { login, register } from '../api';
@@ -19,9 +19,11 @@ const Login = () => {
   });
 
   // Check if already logged in
-  if (localStorage.getItem('bp_token')) {
-    navigate('/intelligence');
-  }
+  useEffect(() => {
+    if (localStorage.getItem('bp_token')) {
+      navigate('/intelligence');
+    }
+  }, [navigate]);
 
   const handleLogin = async () => {
     if (!loginData.username || !loginData.password) {
