@@ -85,14 +85,12 @@ def export_pdf(db: Session = Depends(get_db)):
 @router.get("/daily-summary-email")
 def send_daily_summary_email(db: Session = Depends(get_db)):
     import os
-    import resend
-    from datetime import date
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
 
-    resend_api_key = os.environ.get("RESEND_API_KEY")
-    if not resend_api_key:
-        return {"error": "RESEND_API_KEY not configured"}
-
-    resend.api_key = resend_api_key
+    sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+    if not sendgrid_api_key:
+        return {"error": "SENDGRID_API_KEY not configured"}
 
     today = date.today()
     today_str = today.strftime("%B %d, %Y")
@@ -152,8 +150,8 @@ def send_daily_summary_email(db: Session = Depends(get_db)):
 
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
           <tr style="background: #f3f4f6;">
-            <td style="padding: 12px 16px; font-size: 14px; font-weight: 600; color: #444; border-radius: 8px 0 0 0;">Metric</td>
-            <td style="padding: 12px 16px; font-size: 14px; font-weight: 600; color: #444; border-radius: 0 8px 0 0; text-align: right;">Count</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 600; color: #444;">Metric</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 600; color: #444; text-align: right;">Count</td>
           </tr>
           <tr style="border-bottom: 1px solid #f3f4f6;">
             <td style="padding: 12px 16px; font-size: 14px; color: #555;">Total Unresolved Tickets</td>
@@ -193,12 +191,15 @@ def send_daily_summary_email(db: Session = Depends(get_db)):
     """
 
     try:
-        resend.Emails.send({
-            "from": "Bustler Pulse <onboarding@resend.dev>",
-            "to": ["ambadisoumya188@gmail.com"],
-            "subject": f"📊 Bustler Pulse Daily Summary — {today_str} ({unresolved} unresolved)",
-            "html": body_html
-        })
+        message = Mail(
+            from_email='ambadisoumya188@gmail.com',
+            to_emails='ambadisoumya188@gmail.com',
+            subject=f'📊 Bustler Pulse Daily Summary — {today_str} ({unresolved} unresolved)',
+            html_content=body_html
+        )
+        sg = SendGridAPIClient(sendgrid_api_key)
+        sg.send(message)
+
         return {
             "message": "✅ Daily summary email sent successfully",
             "date": today_str,
