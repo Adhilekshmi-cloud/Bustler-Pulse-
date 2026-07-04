@@ -82,6 +82,133 @@ def export_pdf(db: Session = Depends(get_db)):
         media_type= "application/pdf"
     )
 
+@router.get("/daily-summary-email")
+def send_daily_summary_email(db: Session = Depends(get_db)):
+    import os
+    import resend
+    from datetime import date
+
+    resend_api_key = os.environ.get("RESEND_API_KEY")
+    if not resend_api_key:
+        return {"error": "RESEND_API_KEY not configured"}
+
+    resend.api_key = resend_api_key
+
+    today = date.today()
+    today_str = today.strftime("%B %d, %Y")
+
+    # Count unresolved tickets
+    unresolved = db.query(Ticket).filter(
+        Ticket.status != "resolved"
+    ).count()
+
+    open_tickets = db.query(Ticket).filter(
+        Ticket.status == "open"
+    ).count()
+
+    in_progress = db.query(Ticket).filter(
+        Ticket.status == "in_progress"
+    ).count()
+
+    critical_unresolved = db.query(Ticket).filter(
+        Ticket.status != "resolved",
+        Ticket.urgency == "critical"
+    ).count()
+
+    anger_flagged = db.query(Ticket).filter(
+        Ticket.status != "resolved",
+        Ticket.is_anger_flagged == 1
+    ).count()
+
+    resolved_today = db.query(Ticket).filter(
+        Ticket.status == "resolved",
+        Ticket.resolved_at >= datetime.combine(today, datetime.min.time())
+    ).count()
+
+    # Determine status label
+    if critical_unresolved == 0 and unresolved < 5:
+        status_label = "✅ All Clear"
+        status_color = "#16a34a"
+    elif critical_unresolved > 0:
+        status_label = "🔴 Needs Attention"
+        status_color = "#E8232A"
+    else:
+        status_label = "⚠️ Moderate Load"
+        status_color = "#f59e0b"
+
+    body_html = f"""
+    <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+      <div style="background: #E8232A; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 20px;">🧠 Bustler Pulse — Daily Summary</h1>
+        <p style="color: rgba(255,255,255,0.85); margin: 6px 0 0; font-size: 14px;">{today_str}</p>
+      </div>
+
+      <div style="background: white; border: 1px solid #e5e7eb; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
+
+        <div style="background: #f9fafb; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; border-left: 4px solid {status_color};">
+          <div style="font-size: 18px; font-weight: 700; color: {status_color};">{status_label}</div>
+          <div style="font-size: 13px; color: #666; margin-top: 4px;">End-of-day status for {today_str}</div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+          <tr style="background: #f3f4f6;">
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 600; color: #444; border-radius: 8px 0 0 0;">Metric</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 600; color: #444; border-radius: 0 8px 0 0; text-align: right;">Count</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6;">
+            <td style="padding: 12px 16px; font-size: 14px; color: #555;">Total Unresolved Tickets</td>
+            <td style="padding: 12px 16px; font-size: 18px; font-weight: 800; color: #E8232A; text-align: right;">{unresolved}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6; background: #fafafa;">
+            <td style="padding: 12px 16px; font-size: 14px; color: #555;">— Open (not yet assigned)</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 700; color: #f59e0b; text-align: right;">{open_tickets}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6;">
+            <td style="padding: 12px 16px; font-size: 14px; color: #555;">— In Progress</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 700; color: #6366f1; text-align: right;">{in_progress}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6; background: #fafafa;">
+            <td style="padding: 12px 16px; font-size: 14px; color: #555;">Critical & Unresolved</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 700; color: #E8232A; text-align: right;">{critical_unresolved}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f3f4f6;">
+            <td style="padding: 12px 16px; font-size: 14px; color: #555;">Anger-Flagged & Unresolved</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 700; color: #f97316; text-align: right;">{anger_flagged}</td>
+          </tr>
+          <tr style="background: #f0fdf4;">
+            <td style="padding: 12px 16px; font-size: 14px; color: #16a34a; font-weight: 600;">✅ Resolved Today</td>
+            <td style="padding: 12px 16px; font-size: 14px; font-weight: 700; color: #16a34a; text-align: right;">{resolved_today}</td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-top: 16px;">
+          <a href="https://bustler-pulse.vercel.app" style="background: #E8232A; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">View Full Dashboard →</a>
+        </div>
+
+        <p style="font-size: 12px; color: #aaa; text-align: center; margin-top: 24px;">
+          — Bustler Pulse Automated Reporting · Sent daily at 6PM IST
+        </p>
+      </div>
+    </div>
+    """
+
+    try:
+        resend.Emails.send({
+            "from": "Bustler Pulse <onboarding@resend.dev>",
+            "to": ["ambadisoumya188@gmail.com"],
+            "subject": f"📊 Bustler Pulse Daily Summary — {today_str} ({unresolved} unresolved)",
+            "html": body_html
+        })
+        return {
+            "message": "✅ Daily summary email sent successfully",
+            "date": today_str,
+            "unresolved_tickets": unresolved,
+            "critical_unresolved": critical_unresolved,
+            "resolved_today": resolved_today
+        }
+    except Exception as e:
+        return {"error": f"Email failed: {str(e)}"}
+    
 @router.get("/summary")
 def get_summary(db: Session = Depends(get_db)):
     today = date.today()
