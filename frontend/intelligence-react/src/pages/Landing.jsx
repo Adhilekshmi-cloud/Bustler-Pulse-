@@ -1,9 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 const Landing = () => {
-  const navigate = useNavigate();
 
   const pillars = [
     {
@@ -41,8 +39,7 @@ const Landing = () => {
       desc: 'The analytics brain. Product team sees patterns, heatmaps and system health. Every resolved ticket becomes structured knowledge.',
       features: ['System health — live status page', 'Product feedback reports', 'Issue heatmap by week', 'Micro-report auto-generator', 'Agent leaderboard'],
       btn: 'Open Intelligence →',
-      link: null,
-      internal: true,
+      link: 'https://bustler-pulse.vercel.app/login',
       color: '#6366f1',
       bg: '#ede9fe'
     }
@@ -56,12 +53,12 @@ const Landing = () => {
   ];
 
   const flow = [
-  { role: 'User', desc: 'Submits ticket via form' },
-  { role: 'Auto Triage', desc: 'Classifies + scores urgency' },
-  { role: 'Ops Agent', desc: 'Resolves in dashboard' },
-  { role: 'Auto Generate', desc: 'Report + badge created' },
-  { role: 'Product Team', desc: 'Sees patterns + insights' }
-];
+    { role: 'User', desc: 'Submits ticket via form' },
+    { role: 'Auto Triage', desc: 'Classifies + scores urgency' },
+    { role: 'Ops Agent', desc: 'Resolves in dashboard' },
+    { role: 'Auto Generate', desc: 'Report + badge created' },
+    { role: 'Product Team', desc: 'Sees patterns + insights' }
+  ];
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -125,19 +122,11 @@ const Landing = () => {
                   </div>
                 ))}
               </div>
-              {p.internal ? (
-                <button onClick={() => navigate('/login')} style={{
-                  display: 'block', padding: '12px', borderRadius: '10px',
-                  fontSize: '14px', fontWeight: 700, background: p.color,
-                  color: 'white', border: 'none', cursor: 'pointer'
-                }}>{p.btn}</button>
-              ) : (
-                <a href={p.link} target="_blank" rel="noreferrer" style={{
-                  display: 'block', padding: '12px', borderRadius: '10px',
-                  fontSize: '14px', fontWeight: 700, background: p.color,
-                  color: 'white', textAlign: 'center'
-                }}>{p.btn}</a>
-              )}
+              <a href={p.link} target="_blank" rel="noreferrer" style={{
+                display: 'block', padding: '12px', borderRadius: '10px',
+                fontSize: '14px', fontWeight: 700, background: p.color,
+                color: 'white', textAlign: 'center', textDecoration: 'none'
+              }}>{p.btn}</a>
             </div>
           ))}
         </div>
