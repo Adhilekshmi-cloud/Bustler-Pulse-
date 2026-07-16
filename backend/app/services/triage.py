@@ -23,6 +23,8 @@ URGENCY_MAP = {
     "no_response": "medium",
     "delivery": "medium",
     "quality": "low",
+    "technical": "medium",
+    "account": "medium",
     "other": "low"
 }
 
@@ -51,6 +53,22 @@ KNOWN_ISSUES = {
             "Hi! We are sorry to hear that. We have flagged this "
             "freelancer's account and an ops agent will follow up "
             "within 24 hours to help resolve this."
+        )
+    },
+    "technical": {
+        "keywords": [""],
+        "reply": (
+            "Hi! We've received your technical issue and our engineering "
+            "team has been notified. We'll investigate and provide an "
+            "update as soon as possible."
+        )
+    },
+    "account": {
+        "keywords": [""],
+        "reply": (
+            "Hi! We've received your account issue. Our support team "
+            "will review your account and get back to you within "
+            "24 hours to resolve this."
         )
     },
     "delivery": {
@@ -137,9 +155,6 @@ def suggest_agent(category: str, agents: list) -> object:
     return max(agents, key=lambda a: a.avg_csat)
 
 
-
-
-
 # ── AI-Powered Triage (Gemini) ──────────────────────────
 # Calls Gemini server-side to classify a ticket — free tier,
 # no billing required. Falls back to keyword-based
@@ -148,7 +163,8 @@ def suggest_agent(category: str, agents: list) -> object:
 
 VALID_ROUTES = [
     "payment_team", "delivery_team", "quality_team",
-    "refund_team", "no_response_team", "ops_agent", "dispute_team"
+    "refund_team", "no_response_team", "technical_team",
+    "account_team", "ops_agent", "dispute_team"
 ]
 
 def ai_triage_ticket(category: str, description: str) -> dict:
