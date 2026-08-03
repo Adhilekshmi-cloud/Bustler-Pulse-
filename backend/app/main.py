@@ -18,6 +18,7 @@ with engine.connect() as conn:
         print("✅ Columns added/verified successfully")
     except Exception as e:
         print(f"⚠️ Column addition error: {e}")
+
 app = FastAPI(
     title       = "Bustler Pulse API",
     description = "Intelligent support & operations system for Bustler",
@@ -26,7 +27,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins     = ["*"],
+    allow_origins     = [
+        "https://bustler-pulse.vercel.app",
+        "https://bustler-pulse-six.vercel.app",
+        "https://bustler-frontend.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials = False,
     allow_methods     = ["*"],
     allow_headers     = ["*"]

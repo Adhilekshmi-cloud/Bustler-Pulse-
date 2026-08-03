@@ -230,9 +230,9 @@ async def upload_screenshot(file: UploadFile = File(...)):
     import io
 
     cloudinary.config(
-        cloud_name = "dxykbg56j",
-        api_key    = "351331374515618",
-        api_secret = "JXD0X2Yy7qS1gLzSm81qJQ-xYFo"
+        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"),
+        api_key    = os.environ.get("CLOUDINARY_API_KEY"),
+        api_secret = os.environ.get("CLOUDINARY_API_SECRET")
     )
 
     allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
@@ -336,9 +336,61 @@ def get_autoreply(ticket_id: int, db: Session = Depends(get_db)):
 # Updates status to in_progress, category to Dispute
 # Routes to Anjali P Remesh as escalation handler
 # Sends an email notification on successful escalation
+
+@router.patch("/{ticket_id}/escalate")
+def escalate_ticket(
+    ticket_id     : int,
+    escalate_data : EscalateRequest,
+    db            : Session = Depends(get_db)
+):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    if ticket.status == "resolved":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot escalate a resolved ticket"
+        )
+
+    ticket.status   = "in_progress"
+    ticket.category = "Dispute"
+
+    db.commit()
+    db.refresh(ticket)
+
+    send_escalation_email(
+        ticket_id      = ticket.id,
+        reason         = escalate_data.reason,
+        category       = ticket.category,
+        user_id        = ticket.user_id,
+        screenshot_url = ticket.screenshot_url
+    )
+
+    return {
+        "id"                : ticket.id,
+        "status"            : ticket.status,
+        "category"          : ticket.category,
+        "escalated_to"      : "Anjali P Remesh",
+        "reason"            : escalate_data.reason,
+        "user_id"           : ticket.user_id,
+        "project_id"        : ticket.project_id,
+        "payment_status"    : ticket.payment_status,
+        "description"       : ticket.description,
+        "urgency"           : ticket.urgency,
+        "is_anger_flagged"  : ticket.is_anger_flagged,
+        "auto_reply_sent"   : ticket.auto_reply_sent,
+        "assigned_agent_id" : ticket.assigned_agent_id,
+        "screenshot_url"    : ticket.screenshot_url,
+        "created_at"        : ticket.created_at,
+        "resolved_at"       : ticket.resolved_at,
+        "message"           : "✅ Ticket escalated successfully — routed to Anjali P Remesh"
+    }
+
+
 # ── POST /tickets/{id}/triage ────────────────────────────
 # Manually re-run AI triage on an existing ticket
-# Saves the new urgency, anger flag, route_to, and auto-reply onto the ticket
+# Saves the new urgency, anger flag, route_to, and auto_reply onto the ticket
 
 @router.post("/{ticket_id}/triage")
 def triage_existing_ticket(ticket_id: int, db: Session = Depends(get_db)):
@@ -368,57 +420,4 @@ def triage_existing_ticket(ticket_id: int, db: Session = Depends(get_db)):
         "auto_reply_sent"  : ticket.auto_reply_sent,
         "route_to"         : ticket.route_to,
         "message"          : "✅ Ticket re-triaged successfully"
-    }
-
-@router.patch("/{ticket_id}/escalate")
-def escalate_ticket(
-    ticket_id     : int,
-    escalate_data : EscalateRequest,
-    db            : Session = Depends(get_db)
-):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    if ticket.status == "resolved":
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot escalate a resolved ticket"
-        )
-
-    # Update ticket fields
-    ticket.status   = "in_progress"
-    ticket.category = "Dispute"
-
-    db.commit()
-    db.refresh(ticket)
-
-    # Send escalation email — only fires on successful update, never breaks the endpoint
-    send_escalation_email(
-        ticket_id      = ticket.id,
-        reason         = escalate_data.reason,
-        category       = ticket.category,
-        user_id        = ticket.user_id,
-        screenshot_url = ticket.screenshot_url
-    )
-
-    # Build response
-    return {
-        "id"                : ticket.id,
-        "status"            : ticket.status,
-        "category"          : ticket.category,
-        "escalated_to"      : "Anjali P Remesh",
-        "reason"            : escalate_data.reason,
-        "user_id"           : ticket.user_id,
-        "project_id"        : ticket.project_id,
-        "payment_status"    : ticket.payment_status,
-        "description"       : ticket.description,
-        "urgency"           : ticket.urgency,
-        "is_anger_flagged"  : ticket.is_anger_flagged,
-        "auto_reply_sent"   : ticket.auto_reply_sent,
-        "assigned_agent_id" : ticket.assigned_agent_id,
-        "screenshot_url"    : ticket.screenshot_url,
-        "created_at"        : ticket.created_at,
-        "resolved_at"       : ticket.resolved_at,
-        "message"           : "✅ Ticket escalated successfully — routed to Anjali P Remesh"
     }
