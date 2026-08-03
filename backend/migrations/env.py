@@ -24,11 +24,7 @@ target_metadata = Base.metadata
 # Load DATABASE_URL from environment
 def get_url():
     url = os.environ.get("DATABASE_URL", "")
-    # Convert psycopg3 URL to psycopg2-compatible for Alembic
-    if url.startswith("postgresql+psycopg://"):
-        url = url.replace("postgresql+psycopg://", "postgresql://")
     return url
-
 
 def run_migrations_offline() -> None:
     url = get_url()
